@@ -1,0 +1,68 @@
+import mongoose,{Schema} from 'mongoose'
+import bcrypt from 'bcrypt'
+import JWT from 'jsonwebtoken'
+
+const userSchema= Schema({
+    fullName:{
+        type: String,
+        required: true,
+        trim: true
+    },
+    email:{
+        type: String,
+        required: true,
+        trim: true,
+        lowercase:true
+    },
+    password:{
+        type: String,
+        required: true
+    },
+    refreshToken: {
+        type: String
+    },
+    profilePicture:{
+        type: String
+    }
+})
+
+userSchema.pre(async function(){
+    if(!this.isModified("password")){
+        return
+    }
+    this.password= await bcrypt.hash(this.password, 10)
+})
+
+userSchema.methods.isPasswordCorrect= async (password)=>{
+    return isPasswordCorrect= await bcrypt.compare(this.password,password)
+}
+
+userSchema.methods.generateAccessToken= async () => {
+    return JWT.sign(
+        {
+            _id: this._id,
+            fullName: this.fullName,
+            email: this.email
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
+}
+
+userSchema.methods.generateRefreshToken= async () => {
+    return JWT.sign(
+        {
+            _id: this._id,
+            fullName: this.fullName,
+            email: this.email
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
+    )
+}
+
+export const User= mongoose.model("User",userSchema)
