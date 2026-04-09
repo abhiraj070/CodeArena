@@ -1,10 +1,10 @@
-import { app } from "./app.js";
+import { server } from "./app.js";
 import { dbconnect } from "./db/dbconnect.js";
 
 dbconnect()
 .then(
     ()=>{
-        app.listen(process.env.PORT,()=>{
+        server.listen(process.env.PORT,()=>{
             console.log("server started on port",process.env.PORT);
         })
     }
@@ -13,3 +13,4 @@ dbconnect()
     console.log("error in server creation");
     throw error
 })
+
