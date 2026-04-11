@@ -1,8 +1,9 @@
-import { ApiError } from "../../utils/ApiError";
-import { ApiResponse } from "../../utils/ApiResponse";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { Questions } from "../models/question.model";
-import { initilisIO } from "../socket/socket";
+import { ApiError } from "../../utils/ApiError.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { Questions } from "../models/question.model.js";
+import { initilisIO } from "../socket/socket.js";
+import { client } from "../redis/redis.js";
 
 
 const startQuestion= asyncHandler(async (req,res) => {
@@ -14,6 +15,8 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(!ques_id){
         return new ApiError(400, "Question id is required")
     }
+    const cachedValue= await client.
+    if()
     const question= await Questions.findById(ques_id)
     if(!question){
         return new ApiError(404, "Question not found")
