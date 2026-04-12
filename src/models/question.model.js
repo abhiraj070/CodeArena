@@ -13,6 +13,6 @@ const questionSchema= Schema({
         type: String,
         required: true
     }
-})
+},{timestamps: true})
 
 export const Questions= Schema.model("Question",questionSchema)

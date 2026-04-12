@@ -14,7 +14,7 @@ const initilisIO= ()=>{
             socket.join(roomId)
             rooms[roomId]= rooms[roomId] || []
             rooms[roomId]= rooms[roomId].push({socketId: socket.id, username: username})
-            socket.emit("user_joined",`${username}`)
+            socket.to(roomId).emit("user_joined",`${username}`)
         })
 
         //send message to room
@@ -25,7 +25,7 @@ const initilisIO= ()=>{
         socket.on("leave-room",({roomId})=>{
             socket.leave(roomId)
             rooms[roomId]= rooms[roomId].filter((user)=>{
-                user.socket.id!=socket.id
+                return user.socketId!=socket.id
             })
         })
 

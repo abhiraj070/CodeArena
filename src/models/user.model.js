@@ -23,6 +23,10 @@ const userSchema= Schema({
     },
     profilePicture:{
         type: String
+    },
+    recentlyConnectedWith:{
+        type: mongoose.Types.ObjectId,
+        ref: "User"
     }
 })
 
