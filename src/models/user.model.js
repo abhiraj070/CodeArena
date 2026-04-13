@@ -24,10 +24,10 @@ const userSchema= Schema({
     profilePicture:{
         type: String
     },
-    recentlyConnectedWith:{
+    recentlyConnectedWith:[{
         type: mongoose.Types.ObjectId,
         ref: "User"
-    }
+    }]
 })
 
 userSchema.pre("save", async function () {

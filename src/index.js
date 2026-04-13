@@ -1,7 +1,7 @@
 import { server } from "./app.js";
 import { dbconnect } from "./db/dbconnect.js";
 import {connectRedis} from "./redis/redis.js"
-import { initilisIO } from "../socket/socket.js";
+import { initializeIO } from "../socket/socket.js";
 
 
 dbconnect()
@@ -12,7 +12,7 @@ dbconnect()
             console.log("server started on port",process.env.PORT);
         })
         try {
-                initilisIO();
+                initializeIO();
             } catch (error) {
                 console.log("error while initializing socket:",error);
                 return new ApiError(500, "Error while initializing socket")

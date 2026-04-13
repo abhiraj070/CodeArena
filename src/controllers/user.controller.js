@@ -3,6 +3,8 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../../utils/cloudinary.js";
 import { User } from "../models/user.model.js";
+import {joinedMyRoom} from "../socket/socket.js"
+
 
 const register= asyncHandler(async (req,res) => {
     const {fullName, email, password}= req.body
@@ -68,4 +70,15 @@ const login= asyncHandler(async (req, res) => {
     .json(new ApiResponse(200,{user: loggedUser},"User logged in successfully"))
 })
 
-export {register, login}
+const pastConnectedUsers= asyncHandler(async (req, res) => {
+    const {user_id}= req.user._id
+    if(!user_id){
+        return new ApiError(404, "user not found")
+    }
+    const user= await User.findById(user_id)
+    return res
+    .status(200)
+    .json(new ApiError(200,{pastConnections: user.recentlyConnectedWith},"Successfully fetched past connections"))
+})
+
+export {register, login, pastConnectedUsers}
