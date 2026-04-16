@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import { ApiError } from "../../utils/ApiError.js";
-import { ApiResponse } from "../../utils/ApiResponse.js";
-import { asyncHandler } from "../../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { Questions } from "../models/question.model.js";
 import { client } from "../redis/redis.js";
 
@@ -59,4 +59,18 @@ const startQuestion= asyncHandler(async (req,res) => {
     .json(new ApiResponse(200,{question, user},"successfully started a workspace for question"))
 })
 
-export {startQuestion, getAllQuestion}
+const getAQuestion= asyncHandler(async (req, res) => {
+    const ques_id= res.params.ques_id
+    if(!ques_id){
+        return new ApiError(400,"question id is required")
+    }
+    const question= await Questions.findById(ques_id).select("-visibleInput -VisibleOutput -description")
+    if(!question){
+        return new ApiError(404,"question not found")
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200,question,"Question featched successfully"))
+})
+
+export {startQuestion, getAllQuestion, getAQuestion}

@@ -5,11 +5,19 @@ const questionSchema= Schema({
         type: String,
         required: true
     },
-    visibleTestCases:{
+    visibleInput:{
         type: String,
         required: true
     },
-    hiddenTestCases:{
+    visibleOutput:{
+        type: String,
+        required: true
+    },
+    hiddenInput:{
+        type: String,
+        required: true
+    },
+    hiddenOutput:{
         type: String,
         required: true
     }

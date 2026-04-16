@@ -15,8 +15,8 @@ app.use(cookieParser())
 app.use(express.urlencoded())
 app.use(express.json({limit:"10mb"}))
 
-import userRouter from "../src/routes/user.route.js"
-import quesRouter from "../src/routes/question.route.js"
+import userRouter from "./routes/user.route.js"
+import quesRouter from "./routes/question.route.js"
 
 app.use("/api/v1/user", userRouter)
 app.use("/api/v1/question", quesRouter)
