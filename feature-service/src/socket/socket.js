@@ -1,10 +1,24 @@
 import { ApiError } from "../../utils/ApiError"
 import {io} from "../app"
 import { User } from "../models/user.model"
+import { client } from "../redis/redis"
 
-const rooms={},joinedMyRoom={}
+const rooms={},joinedMyRoom={},user={}
 const initializeIO= ()=>{
     io.on("connection",(socket)=>{
+
+        socket.on("register",async({userId})=>{
+            user[userId]=socket.id
+            const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
+            if(storedMessage.length>0){
+                for (const msg of storedMessage) {
+                    const parse= JSON.parse(msg)
+                    socket.emit("receive-inchat-message",parse.message,{senderId: parse.senderId})
+                }
+                await client.del(`stored-chat-message:${userId}`)
+            }
+        })
+
         socket.on("create-room",({roomId, username, id})=>{
             if(rooms[roomId]){
                 return new ApiError(400,"Room already exist")
@@ -49,11 +63,11 @@ const initializeIO= ()=>{
         })
 
         //send message to room
-        socket.on("send-message",({roomId, username, message})=>{
+        socket.on("in-meeting-message",({roomId, username, message})=>{
             if(!rooms[roomId]){
                 return new ApiError(404,"roomId not found")
             }
-            io.to(`${roomId}`).emit("received-message",{message,username})
+            io.to(`${roomId}`).emit("received-message",{message, username})
         })
 
         socket.on("leave-room",({roomId, id})=>{
@@ -66,11 +80,19 @@ const initializeIO= ()=>{
             })
 
         })
-
         //disconnect connection
-        socket.on("disconnect",(reason)=>{
-            console.log("disconnected:",reason);
+        socket.on("disconnect",(reason,)=>{
+            console.log("disconnected: ",reason);
             
+        })
+
+        socket.on("in-chat-message",async({message,recever_id,senderId})=>{
+            if(user[recever_id]){
+                io.to(user[recever_id]).emit("receive-inchat-message",message,{senderId: senderId})
+            }
+            else{
+                await client.lpush(`stored-chat-message:${recever_id}`,JSON.stringify({message, senderId}))
+            }
         })
     })
 }
