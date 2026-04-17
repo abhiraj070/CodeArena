@@ -1,7 +1,7 @@
-import { ApiError } from "../../utils/ApiError"
-import {io} from "../app"
-import { User } from "../models/user.model"
-import { client } from "../redis/redis"
+import { ApiError } from "../../utils/ApiError.js"
+import {io} from "../app.js"
+import { User } from "../models/user.model.js"
+import { client } from "../redis/redis.js"
 
 const rooms={},joinedMyRoom={},user={}
 const initializeIO= ()=>{

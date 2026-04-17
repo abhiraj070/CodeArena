@@ -1,6 +1,6 @@
 import { Router } from "express";
-import {getAllQuestion, getAQuestion, startQuestion} from "../controllers/question.controller"
-import { VerifyJWT } from "../middleware/auth.middleware";
+import {getAllQuestion, getAQuestion, startQuestion} from "../controllers/question.controller.js"
+import { VerifyJWT } from "../middleware/auth.middleware.js";
 const router= Router()
 
 router.route("/startQues").get(VerifyJWT, startQuestion)
