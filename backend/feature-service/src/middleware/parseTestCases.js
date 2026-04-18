@@ -1,4 +1,4 @@
-import { ApiError } from "../utils/ApiError"
+import { ApiError } from "../utils/ApiError.js"
 
 function parseTestCases(req, res, next){
     const {visibleInput, visibleOutput, hiddenInput, hiddenOutput}= req.body

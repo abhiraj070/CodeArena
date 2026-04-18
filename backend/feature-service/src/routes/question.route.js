@@ -8,3 +8,5 @@ router.route("/startQues").get(VerifyJWT, startQuestion)
 router.route("/getQuestions").get(VerifyJWT, getAllQuestion)
 router.route("/getAQuestion/:ques_id").get(getAQuestion)
 router.route("/storeQuestion").post(parseTestCases, storeAQuestion)
+
+export default router

@@ -1,7 +1,7 @@
 import { server } from "./app.js";
 import { dbconnect } from "./db/dbconnect.js";
 import {connectRedis} from "./redis/redis.js"
-import { initializeIO } from "../socket/socket.js";
+import { initializeIO } from "./socket/socket.js";
 
 
 dbconnect()

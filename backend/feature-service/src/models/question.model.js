@@ -23,4 +23,4 @@ const questionSchema= Schema({
     },
 },{timestamps: true})
 
-export const Questions= Schema.model("Question",questionSchema)
+export const Questions= mongoose.model("Question",questionSchema)
