@@ -24,7 +24,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
         {limit: Number(limit)}
     ])
     if(questionToDisplay.length===0){
-        return new ApiError(404, "No more questions to display")
+        throw new ApiError(404, "No more questions to display")
     }
     await client.set("startingQuestions",JSON.stringify(questionToDisplay))
     const nextCursor= questionToDisplay.length? questionToDisplay[questionToDisplay.length-1]._id : null
@@ -38,10 +38,10 @@ const startQuestion= asyncHandler(async (req,res) => {
     const {ques_id}= req.body
     const user= req.user
     if(!user){
-        return new ApiError(401, "Unauthorized request")
+        throw new ApiError(401, "Unauthorized request")
     }
     if(!ques_id){
-        return new ApiError(400, "Question id is required")
+        throw new ApiError(400, "Question id is required")
     }
     const cachedValue= await client.get(`${user._id}:Question:${ques_id}`)
     if(cachedValue){
@@ -51,7 +51,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     }
     const question= await Questions.findById(ques_id)
     if(!question){
-        return new ApiError(404, "Question not found")
+        throw new ApiError(404, "Question not found")
     }
     await client.set(`${user._id}:Question:${ques_id}`,JSON.stringify(question))
     return res
@@ -62,15 +62,35 @@ const startQuestion= asyncHandler(async (req,res) => {
 const getAQuestion= asyncHandler(async (req, res) => {
     const ques_id= res.params.ques_id
     if(!ques_id){
-        return new ApiError(400,"question id is required")
+        throw new ApiError(400,"question id is required")
     }
     const question= await Questions.findById(ques_id).select("-visibleInput -VisibleOutput -description")
     if(!question){
-        return new ApiError(404,"question not found")
+        throw new ApiError(404,"question not found")
     }
     return res
     .status(200)
     .json(new ApiResponse(200,question,"Question featched successfully"))
 })
 
-export {startQuestion, getAllQuestion, getAQuestion}
+const storeAQuestion= asyncHandler(async (req, res) => {
+    const {description, difficulty, returnType, hiddenTestCases, visibleTestCases}= req.body
+    if(!description || !difficulty || !returnType || !hiddenTestCases || !visibleTestCases){
+        throw new ApiError(400,"all fields are required")
+    }
+    const questionCreated= await Questions.create({
+        description,
+        difficulty,
+        returnType,
+        hiddenTestCases,
+        visibleTestCases
+    })
+    if(!questionCreated){
+        throw new ApiError(500,"Error while storeing the question")
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200,questionCreated,"successfully created a qeuestion"))
+})
+
+export {startQuestion, getAllQuestion, getAQuestion, storeAQuestion}

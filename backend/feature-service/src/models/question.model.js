@@ -5,22 +5,14 @@ const questionSchema= Schema({
         type: String,
         required: true
     },
-    visibleInput:{
+    visibleTestCases:[{
         type: String,
         required: true
-    },
-    visibleOutput:{
+    }],
+    hiddenTestCases:[{
         type: String,
         required: true
-    },
-    hiddenInput:{
-        type: String,
-        required: true
-    },
-    hiddenOutput:{
-        type: String,
-        required: true
-    },
+    }],
     difficulty:{
         type: String,
         required: true
