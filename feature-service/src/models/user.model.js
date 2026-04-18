@@ -8,6 +8,10 @@ const userSchema= Schema({
         required: true,
         trim: true
     },
+    username:{
+        type:String,
+        unique: true
+    },
     email:{
         type: String,
         required: true,
@@ -18,6 +22,19 @@ const userSchema= Schema({
         type: String,
         required: true
     },
+    language:{
+        type: String,
+        enum: ["javascript", "python", "cpp", "java", "typescript"],
+        default: "cpp"
+    },
+    isOnline:{
+        type: Boolean,
+        default: false
+    },
+    bio:{
+        type: String,
+        default: ""
+    },
     refreshToken: {
         type: String
     },
@@ -27,7 +44,7 @@ const userSchema= Schema({
     recentlyConnectedWith:[{
         type: mongoose.Types.ObjectId,
         ref: "User"
-    }]
+    }],
 })
 
 userSchema.pre("save", async function () {

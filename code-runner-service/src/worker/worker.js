@@ -2,7 +2,6 @@ import { Worker } from "bullmq";
 import axios from 'axios'
 import {client} from '../redis/redis.js'
 
-[]
 function executeCode(code, language, question){
 
 }

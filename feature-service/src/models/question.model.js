@@ -20,7 +20,15 @@ const questionSchema= Schema({
     hiddenOutput:{
         type: String,
         required: true
-    }
+    },
+    difficulty:{
+        type: String,
+        required: true
+    },
+    returnType:{
+        type: String,
+        required: true
+    },
 },{timestamps: true})
 
 export const Questions= Schema.model("Question",questionSchema)
