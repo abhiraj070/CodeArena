@@ -3,22 +3,62 @@ import axios from 'axios'
 import {client} from '../redis/redis.js'
 import { ApiError } from "../utils/ApiError.js";
 
-function executeCode(code, language, question){
-    let input
+
+async function getToken(){
+    
+}
+
+async function createSubmission(){
+
+}
+
+
+async function runCdoe(code, input, language){
+
+}
+
+
+async function executeCode(code, language, question, type){
+    let testCases
     if(type==="Submit"){
-        input = question.hiddenInput
+        testCases = question.hiddenTestCases
     }
     else if(type==="Run"){
-        input= question.visibleInput
+        testCases = question.visibleTestCases
     }
     else{
         throw new ApiError(400,"submission type is invalid")
     }
-    for(const inp of input){
+    let result= {
+                    input: "",
+                    output: "",
+                    expected: "",
+                    passed: true
+                }
+    for(const tc of testCases){
+        const res= await runCode(code, tc.input, language)
+        const expected= tc.output
 
+        if(res.stderr){
+            return result={
+                input: tc.input,
+                output: res.stderr,
+                expected,
+                passed: false
+            }
+        }
+
+        const output= res.stdout?.trim() || ""
+        if(output!==expected){
+            return result={
+                input: tc.input,
+                output,
+                expected,
+                passed: false
+            }
+        }
     }
-    const result= await runCode(code,input,language)
-
+    return result
 }
 
 const worker= new Worker("code-execution",async (job)=>{
