@@ -4,17 +4,63 @@ import {client} from '../redis/redis.js'
 import { ApiError } from "../utils/ApiError.js";
 
 
-async function getToken(){
-    
+const LANGUAGE_MAP = {
+  cpp: 54,        // C++ (GCC 9)
+  python: 71,     // Python 3
+  javascript: 63, // Node.js
+  java: 62
+};
+
+async function getResult(token){
+    while(true){
+        const res = await axios.get(
+            `https://judge0-ce.p.rapidapi.com/submissions/${token}`,
+            {
+                headers: {
+                    "X-RapidAPI-Key": process.env.RAPIDAPI,
+                    "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+                }
+            }
+        );
+        const statusId = res.data.status.id;
+        if (statusId <= 2) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+        }
+
+        return res.data;
+    }
 }
 
-async function createSubmission(){
-
+async function createSubmission(code, language_id, input){
+    const res= await axios.get("https://judge0-ce.p.rapidapi.com/submissions",
+        {
+            source_code: code,
+            language_id,
+            stdin: input
+        },
+        {
+            headers: {
+                "Content-Type": "application/json",
+                "X-RapidAPI-Key": process.env.RAPIDAPI,
+                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+            }
+        }
+    )
+    return res.data.token
 }
 
 
 async function runCdoe(code, input, language){
-
+    const language_id= LANGUAGE_MAP[language]
+    const token= await createSubmission(code, language_id, input)
+    const result= await getResult(token)
+    return {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        compile_output: result.compile_output,
+        status: result.status.description
+    };
 }
 
 

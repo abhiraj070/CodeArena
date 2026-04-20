@@ -1,5 +1,6 @@
-import { MessageSquare, Users, User as UserIcon, LogOut, Settings } from "lucide-react";
+import { MessageSquare, Users, User as UserIcon, LogOut, Settings, Plus } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +12,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { currentUser } from "@/lib/mock-data.js";
+import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
 
 export function Navbar({ onOpenChat }) {
+  const [addQuestionOpen, setAddQuestionOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
@@ -28,6 +32,15 @@ export function Navbar({ onOpenChat }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setAddQuestionOpen(true)}
+          >
+            <Plus className="h-4 w-4" /> Add question
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"
@@ -76,6 +89,11 @@ export function Navbar({ onOpenChat }) {
           </DropdownMenu>
         </div>
       </div>
+
+      <AddQuestionDialog
+        open={addQuestionOpen}
+        onClose={() => setAddQuestionOpen(false)}
+      />
     </header>
   );
 }
