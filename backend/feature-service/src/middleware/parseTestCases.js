@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 function parseTestCases(req, res, next){
     const {visibleInput, visibleOutput, hiddenInput, hiddenOutput}= req.body
     if(!visibleInput ||!visibleOutput ||!hiddenInput ||!hiddenOutput){
-        throw new ApiError(400, "Test cases aare required")
+        throw new ApiError(400, "Test cases are required")
     }
     const cleanVisibleInput= visibleInput
                                 .trim()
@@ -21,6 +21,9 @@ function parseTestCases(req, res, next){
                                 .trim()
                                 .split(/\n\s*\n/)
                                 .map(tc=>tc.trim())
+    
+    console.log("Question parsed");
+    
     if(cleanHiddenInput.length!==cleanHiddenOutput.length){
         throw new ApiError(400,"Mismatch in inputs and outputs of hidden Test Cases")
     }
@@ -38,6 +41,9 @@ function parseTestCases(req, res, next){
     }))
     req.hiddenTestCases= hiddenTestCases
     req.visibleTestCases= visibleTestCases
+    console.log("Question Saved");
+    console.log("h:",hiddenTestCases,"v:",visibleTestCases);
+    
     next()
 }
 

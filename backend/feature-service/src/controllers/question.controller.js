@@ -74,10 +74,17 @@ const getAQuestion= asyncHandler(async (req, res) => {
 })
 
 const storeAQuestion= asyncHandler(async (req, res) => {
-    const {description, difficulty, returnType, hiddenTestCases, visibleTestCases}= req.body
+    console.log(1);
+    
+    const {description, difficulty, returnType}= req.body
+    const {hiddenTestCases, visibleTestCases}= req
+    console.log("h:",hiddenTestCases,"v:",visibleTestCases);
+    
     if(!description || !difficulty || !returnType || !hiddenTestCases || !visibleTestCases){
         throw new ApiError(400,"all fields are required")
     }
+    console.log(5);
+    
     const questionCreated= await Questions.create({
         description,
         difficulty,
@@ -85,12 +92,16 @@ const storeAQuestion= asyncHandler(async (req, res) => {
         hiddenTestCases,
         visibleTestCases
     })
+    console.log(4);
+    
     if(!questionCreated){
         throw new ApiError(500,"Error while storeing the question")
     }
+    console.log(3);
+    
     return res
     .status(200)
-    .json(new ApiResponse(200,questionCreated,"successfully created a qeuestion"))
+    .json(new ApiResponse(200, questionCreated, "successfully created a qeuestion"))
 })
 
 export {startQuestion, getAllQuestion, getAQuestion, storeAQuestion}

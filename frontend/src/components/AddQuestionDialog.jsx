@@ -3,13 +3,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
+import axios from "axios";
 
 const EMPTY_FORM = {
   description: "",
   difficulty: "",
   returnType: "",
-  visibleTestCases: "",
-  hiddenTestCases: "",
+  visibleInputs: "",
+  visibleOutputs: "",
+  hiddenInputs: "",
+  hiddenOutputs: "",
 };
 
 export function AddQuestionDialog({ open, onClose, onSubmit }) {
@@ -28,21 +31,27 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
     }));
   };
 
-  const handleSubmit = () => {
-    const payload = {
+  const handleSubmit = async () => {
+    console.log(2);
+    
+    const payload = {      
       description: form.description.trim(),
       difficulty: form.difficulty.trim(),
       returnType: form.returnType.trim(),
-      visibleTestCases: form.visibleTestCases.trim(),
-      hiddenTestCases: form.hiddenTestCases.trim(),
+      visibleInputs: form.visibleInputs.trim(),
+      visibleOutputs: form.visibleOutputs.trim(),
+      hiddenInputs: form.hiddenInputs.trim(),
+      hiddenOutputs: form.hiddenOutputs.trim(),
     };
 
-    onSubmit?.(payload);
+    await axios.post("/feature/v1/question/storeQuestion", payload);
+
+    onSubmit?.(payload);// this is a onSubmit callback passed from parent component which will execute the onsubmit function written in the parent component and pass the payload to it.
   };
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add question</DialogTitle>
         </DialogHeader>
@@ -78,22 +87,40 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
           </div>
 
           <div className="grid gap-2">
-            <label className="text-xs font-medium text-muted-foreground">Visible test cases</label>
+            <label className="text-xs font-medium text-muted-foreground">Visible Inputs</label>
             <Textarea
-              value={form.visibleTestCases}
-              onChange={updateField("visibleTestCases")}
+              value={form.visibleInputs}
+              onChange={updateField("visibleInputs")}
               rows={6}
-              placeholder="Input/output per test case. Leave at least one blank line between test cases."
+              placeholder="One visible input per line or block. Keep case boundaries clear."
+            />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Visible Outputs</label>
+            <Textarea
+              value={form.visibleOutputs}
+              onChange={updateField("visibleOutputs")}
+              rows={6}
+              placeholder="Expected output for visible inputs in matching order."
+            />
+          </div>
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Hidden Inputs</label>
+            <Textarea
+              value={form.hiddenInputs}
+              onChange={updateField("hiddenInputs")}
+              rows={6}
+              placeholder="Private judge inputs, one case per line or separated blocks."
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-xs font-medium text-muted-foreground">Hidden test cases</label>
+            <label className="text-xs font-medium text-muted-foreground">Hidden Outputs</label>
             <Textarea
-              value={form.hiddenTestCases}
-              onChange={updateField("hiddenTestCases")}
+              value={form.hiddenOutputs}
+              onChange={updateField("hiddenOutputs")}
               rows={6}
-              placeholder="Input/output per test case. Leave at least one blank line between test cases."
+              placeholder="Expected outputs for hidden inputs in matching order."
             />
           </div>
         </div>

@@ -1,4 +1,5 @@
 import mongoose,{Schema} from "mongoose";
+import { type } from "os";
 
 const questionSchema= Schema({
     description:{
@@ -6,12 +7,24 @@ const questionSchema= Schema({
         required: true
     },
     visibleTestCases:[{
-        type: String,
-        required: true
+        input: {
+            type: String,
+            required: true
+        },
+        output: {
+            type: String,
+            required: true
+        }
     }],
     hiddenTestCases:[{
-        type: String,
-        required: true
+        input: {
+            type: String,
+            required: true
+        },
+        output: {
+            type: String,
+            required: true
+        }
     }],
     difficulty:{
         type: String,
