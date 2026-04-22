@@ -11,6 +11,8 @@ export default function IndexPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [conversations, setConversations] = useState(initialConversations);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [questionAdded, setQuestionAdded]= useState(false)
+
 
   const handleSendInvite = ({ user, message, code }) => {
     if (!user || !message) return;
@@ -57,10 +59,13 @@ export default function IndexPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onOpenChat={() => setChatOpen(true)} />
+      <Navbar onOpenChat={() => setChatOpen(true)} 
+        setQuestionAdded={setQuestionAdded}
+        questionAdded={questionAdded}
+        />
 
       <main className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[1fr_320px]">
-        <QuestionContainer />
+        <QuestionContainer questionAdded={questionAdded}/>
         <aside className="space-y-4">
           <UserList users={users} onInvite={setInviteUser} />
         </aside>

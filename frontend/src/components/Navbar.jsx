@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { currentUser } from "@/lib/mock-data.js";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
 
-export function Navbar({ onOpenChat }) {
+export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
 
   return (
@@ -93,6 +93,7 @@ export function Navbar({ onOpenChat }) {
       <AddQuestionDialog
         open={addQuestionOpen}
         onClose={() => setAddQuestionOpen(false)}
+        onSubmit={()=> {setAddQuestionOpen(false),setQuestionAdded(!questionAdded)}}
       />
     </header>
   );

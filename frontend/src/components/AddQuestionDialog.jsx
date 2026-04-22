@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea.jsx";
 import axios from "axios";
 
 const EMPTY_FORM = {
+  title: "",
   description: "",
   difficulty: "",
   returnType: "",
@@ -35,13 +36,14 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
     console.log(2);
     
     const payload = {      
+      title: form.title.trim(),
       description: form.description.trim(),
       difficulty: form.difficulty.trim(),
       returnType: form.returnType.trim(),
-      visibleInputs: form.visibleInputs.trim(),
-      visibleOutputs: form.visibleOutputs.trim(),
-      hiddenInputs: form.hiddenInputs.trim(),
-      hiddenOutputs: form.hiddenOutputs.trim(),
+      visibleInput: form.visibleInputs.trim(),
+      visibleOutput: form.visibleOutputs.trim(),
+      hiddenInput: form.hiddenInputs.trim(),
+      hiddenOutput: form.hiddenOutputs.trim(),
     };
 
     await axios.post("/feature/v1/question/storeQuestion", payload);
@@ -57,6 +59,15 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
         </DialogHeader>
 
         <div className="grid gap-4">
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Title</label>
+            <Input
+              value={form.title}
+              onChange={updateField("title")}
+              placeholder="Question title"
+            />
+          </div>
+
           <div className="grid gap-2">
             <label className="text-xs font-medium text-muted-foreground">Description</label>
             <Textarea

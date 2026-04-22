@@ -1,10 +1,16 @@
 import mongoose,{Schema} from "mongoose";
 import { type } from "os";
+import { title } from "process";
 
 const questionSchema= Schema({
     description:{
         type: String,
         required: true
+    },
+    title:{
+        type: String || "",
+        required: true,
+        trim: true
     },
     visibleTestCases:[{
         input: {
@@ -28,10 +34,12 @@ const questionSchema= Schema({
     }],
     difficulty:{
         type: String,
+        toUppercase: true,
         required: true
     },
     returnType:{
         type: String,
+        toUppercase: true,
         required: true
     },
 },{timestamps: true})

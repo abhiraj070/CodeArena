@@ -1,10 +1,16 @@
 import { ApiError } from "../utils/ApiError.js"
 
 function parseTestCases(req, res, next){
+    console.log("question reached the parseTestCase controller");
+    
     const {visibleInput, visibleOutput, hiddenInput, hiddenOutput}= req.body
+    console.log("10");
+    
     if(!visibleInput ||!visibleOutput ||!hiddenInput ||!hiddenOutput){
         throw new ApiError(400, "Test cases are required")
     }
+    console.log("11");
+    
     const cleanVisibleInput= visibleInput
                                 .trim()
                                 .split(/\n\s*\n/) //regex is used here: "//" are regex literals, "\n" is for new line, "\s*" is for any number of white spaces(in regex).
