@@ -1,4 +1,4 @@
-import { MessageSquare, Users, User as UserIcon, LogOut, Settings, Plus } from "lucide-react";
+import { MessageSquare, User as UserIcon, LogOut, Settings, Plus } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -16,6 +16,12 @@ import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
 
 export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("codearena-auth-user");
+    localStorage.removeItem("codearena-registered-user");
+    window.location.assign("/auth");
+  };
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/85 backdrop-blur">
@@ -69,20 +75,15 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile" className="flex items-center gap-2">
+                <Link to="/profile" className="flex cursor-pointer items-center gap-2">
                   <UserIcon className="h-4 w-4" /> View Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/people" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" /> People
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" /> Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onSelect={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4" /> Logout
               </DropdownMenuItem>
             </DropdownMenuContent>

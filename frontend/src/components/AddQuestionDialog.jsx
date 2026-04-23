@@ -120,7 +120,7 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
               value={form.visibleInputs}
               onChange={updateField("visibleInputs")}
               rows={6}
-              placeholder="One visible input per line or block. Keep case boundaries clear."
+              placeholder="Write visible input cases here. Leave atleast one blank line between 2 inputs."
             />
           </div>
           <div className="grid gap-2">
@@ -129,7 +129,7 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
               value={form.visibleOutputs}
               onChange={updateField("visibleOutputs")}
               rows={6}
-              placeholder="Expected output for visible inputs in matching order."
+              placeholder="Write visible output cases here. Leave atleast one blank line between 2 outputs."
             />
           </div>
           <div className="grid gap-2">
@@ -138,7 +138,7 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
               value={form.hiddenInputs}
               onChange={updateField("hiddenInputs")}
               rows={6}
-              placeholder="Private judge inputs, one case per line or separated blocks."
+              placeholder="Write hidden input cases here. Leave atleast one blank line between 2 inputs."
             />
           </div>
 
@@ -148,7 +148,7 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
               value={form.hiddenOutputs}
               onChange={updateField("hiddenOutputs")}
               rows={6}
-              placeholder="Expected outputs for hidden inputs in matching order."
+              placeholder="Write hidden output cases here. Leave atleast one blank line between 2 outputs."
             />
           </div>
         </div>
