@@ -81,4 +81,22 @@ const pastConnectedUsers= asyncHandler(async (req, res) => {
     .json(new ApiError(200,{pastConnections: user.recentlyConnectedWith},"Successfully fetched past connections"))
 })
 
-export {register, login, pastConnectedUsers}
+const getUserByUsername = asyncHandler(async (req, res) => {
+    const { username } = req.params
+
+    if(!username || !username.trim()){
+        throw new ApiError(400, "username is required")
+    }
+
+    const user = await User.findOne({ username: username.trim() }).select("-password -refreshToken")
+
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User fetched successfully"))
+})
+
+export {register, login, pastConnectedUsers, getUserByUsername}

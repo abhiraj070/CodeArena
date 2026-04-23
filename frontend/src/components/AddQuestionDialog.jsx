@@ -18,10 +18,12 @@ const EMPTY_FORM = {
 
 export function AddQuestionDialog({ open, onClose, onSubmit }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (open) {
       setForm(EMPTY_FORM);
+      setErrorMessage("");
     }
   }, [open]);
 
@@ -46,9 +48,18 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
       hiddenOutput: form.hiddenOutputs.trim(),
     };
 
-    await axios.post("/feature/v1/question/storeQuestion", payload);
-
-    onSubmit?.(payload);// this is a onSubmit callback passed from parent component which will execute the onsubmit function written in the parent component and pass the payload to it.
+    try {
+      setErrorMessage("");
+      await axios.post("/feature/v1/question/storeQuestion", payload);
+      onSubmit?.(payload);// this is a onSubmit callback passed from parent component which will execute the onsubmit function written in the parent component and pass the payload to it.
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to add question";
+      setErrorMessage(message);
+      window.alert(message);
+    }
   };
 
   return (
@@ -59,6 +70,12 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
         </DialogHeader>
 
         <div className="grid gap-4">
+          {errorMessage ? (
+            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {errorMessage}
+            </p>
+          ) : null}
+
           <div className="grid gap-2">
             <label className="text-xs font-medium text-muted-foreground">Title</label>
             <Input
