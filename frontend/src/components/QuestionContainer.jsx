@@ -9,13 +9,12 @@ import axios from "axios";
 
 export function QuestionContainer({questionAdded}) {
   const observerRef= useRef(null)
-  const scrollContainerRef = useRef(null)
   const fetchRef= useRef(null)
   const [search, setSearch] = useState("")
   const [questions,setQuestions]= useState([])
   const [cursor, setCursor]= useState(null)
   const [hasMore, setHasMore]= useState(true)
-  const [loading, setLoading]= useState(true)
+  const [loading, setLoading]= useState(false)
   const [filteredQuestions, setFilteredQuestions]= useState([])
 
   const getDifficultyDotColor = (difficulty) => {
@@ -35,36 +34,6 @@ export function QuestionContainer({questionAdded}) {
     })
     return [...existing, ...nextItems]
   }
-
-  const fetchQuestions= useCallback(async () => {
-    if (!hasMore ) {
-      setLoading(false)
-      return
-    }
-
-    try {
-      const url= cursor
-        ? `/feature/v1/question/getQuestions?cursor=${cursor}&limit=10`
-        : `/feature/v1/question/getQuestions?limit=10`
-      const res= await axios.get(url)
-      const incomingQuestions = res?.data?.data?.questions ?? []
-      const nextCursor = res?.data?.data?.nextCursor ?? null
-
-      setQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
-      setFilteredQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
-      setCursor(nextCursor)
-      const more = Boolean(nextCursor)
-      setHasMore(more)
-    } catch (error) {
-      console.error("error in getting question:", error)
-    } finally {
-      setLoading(false)
-    }
-  },[cursor,hasMore])
-
-  useEffect(()=>{
-    fetchRef.current= fetchQuestions
-  },[fetchQuestions])
 
   useEffect(()=>{
       const getNewlyCreatedQuestion= async () => {
@@ -97,23 +66,7 @@ export function QuestionContainer({questionAdded}) {
     }
   },[questionAdded])
 
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        fetchRef.current?.()
-      }
-    }, {
-      root: scrollContainerRef.current,
-      threshold: 0,
-    })
-
-    const node = observerRef.current
-    if (node) {
-      observer.observe(node)
-    }
-
-    return () => observer.disconnect()
-  }, [questions.length])
+  
 
   function searched(searchInBox){
     setSearch(searchInBox)
@@ -124,7 +77,7 @@ export function QuestionContainer({questionAdded}) {
     
     console.log("search initiated")
     
-    const searchWords= search.split(/\s+/)
+    const searchWords= searchInBox.split(/\s+/)
     const filtredQuestions= questions.filter((question)=> {
       return searchWords.every(word=>question.title.toLowerCase().trim().includes(word.toLowerCase().trim()))
     })
@@ -132,6 +85,50 @@ export function QuestionContainer({questionAdded}) {
     console.log("search done")
     
   }
+
+  const fetchQuestions= useCallback(async () => {
+    if(loading || !hasMore) return
+
+    setLoading(true)
+    try {
+        const url= cursor
+          ? `/feature/v1/question/getQuestions?cursor=${cursor}&limit=12`
+          : `/feature/v1/question/getQuestions?limit=12`
+        const res= await axios.get(url)
+        const incomingQuestions = res?.data?.data?.questions ?? []
+        const nextCursor = res?.data?.data?.nextCursor ?? null
+
+        setQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
+        setFilteredQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
+        setCursor(nextCursor)
+        const more = Boolean(nextCursor)
+        setHasMore(more)
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          setHasMore(false)
+        }
+        console.error("error in getting question:", error)
+      } finally {
+        setLoading(false)
+      }
+    
+  },[cursor,hasMore,loading])
+
+  useEffect(()=>{
+    fetchRef.current= fetchQuestions
+  },[fetchQuestions])
+
+  useEffect(() => {
+   const observer = new IntersectionObserver(entries => { // a tool provided by the browser to keep an i on screen. as soon as the req html appears on the screen this triggers
+            if (entries[0].isIntersecting) { //after the div is visible browser generates a object which is passed to entries, in it there is a field isIntersecting, it turns true when div is visible
+                fetchRef.current();
+            }
+        });
+        if (observerRef.current) {
+            observer.observe(observerRef.current) // due to this assignment of observer.observe we got an eye on the div and whenever it is inside the viewport it tells the browser and then it triggers the callback function given to it.
+        }
+        return () => observer.disconnect();
+  }, [])
 
   return (
     <Card className="flex h-[calc(100vh-7.5rem)] flex-col overflow-hidden p-0">
@@ -151,10 +148,8 @@ export function QuestionContainer({questionAdded}) {
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">Loading questions...</div>
-        ) : filteredQuestions.length === 0 ? (
+      <div className="flex-1 overflow-y-auto">
+        {filteredQuestions.length === 0 && !loading ? (
           <div className="p-10 text-center text-sm text-muted-foreground">
             No questions match "{search}".
           </div>
@@ -179,8 +174,12 @@ export function QuestionContainer({questionAdded}) {
               </li>
             ))}
           </ul>
+          
         )}
-        <div ref={observerRef} className="h-1" />
+            {loading && (
+              <div className="py-4 text-center text-xs text-muted-foreground">Loading more questions...</div>
+            )}
+            <div ref={observerRef} className="h-1" />
       </div>
     </Card>
   );

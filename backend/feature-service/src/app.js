@@ -17,6 +17,7 @@ app.use(helmet()) //helmet protects our app from some well known web vulnerabili
 app.use(cookieParser())
 app.use(express.urlencoded())
 app.use(express.json({limit:"10mb"}))
+app.use("/temp", express.static("public/temp"))
 
 import userRouter from "./routes/user.route.js"
 import quesRouter from "./routes/question.route.js"

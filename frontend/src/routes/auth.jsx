@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import {
+  AtSign,
   ArrowRight,
   CheckCircle2,
   Code2,
@@ -27,13 +28,13 @@ const EMPTY_LOGIN_FORM = {
 
 const EMPTY_SIGNUP_FORM = {
   fullName: "",
+  username: "",
   email: "",
   password: "",
   profilePicture: null,
 };
 
 export default function AuthPage() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState("login");
   const [loginForm, setLoginForm] = useState(EMPTY_LOGIN_FORM);
   const [signupForm, setSignupForm] = useState(EMPTY_SIGNUP_FORM);
@@ -96,11 +97,7 @@ export default function AuthPage() {
         localStorage.setItem("codearena-auth-user", JSON.stringify(user));
       }
 
-      setFeedback({
-        type: "success",
-        text: "Signed in successfully. Redirecting to CodeArena.",
-      });
-      navigate("/");
+      window.location.assign("/");
     } catch (error) {
       setFeedback({
         type: "error",
@@ -125,15 +122,12 @@ export default function AuthPage() {
     try {
       const payload = new FormData();
       payload.append("fullName", signupForm.fullName.trim());
+      payload.append("username", signupForm.username.trim());
       payload.append("email", signupForm.email.trim());
       payload.append("password", signupForm.password);
       payload.append("profilePicture", signupForm.profilePicture);
 
-      const response = await axios.post("/feature/v1/user/register", payload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios.post("/feature/v1/user/register", payload);
 
       const user = response?.data?.data?.user ?? null;
       if (user) {
@@ -186,7 +180,7 @@ export default function AuthPage() {
                   Join the workspace where code, questions, and people stay connected.
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Use the same account for practice, collaboration, and session invites. Login needs your email and password. Signup also needs your full name and a profile picture.
+                  Use the same account for practice, collaboration, and session invites. Login needs your email and password. Signup also needs your full name, username, and a profile picture.
                 </p>
               </div>
             </div>
@@ -222,16 +216,6 @@ export default function AuthPage() {
                 );
               })}
             </div>
-          </div>
-
-          <div className="hidden items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card/70 px-5 py-4 backdrop-blur lg:flex">
-            <div>
-              <p className="text-sm font-medium">Already part of the Arena?</p>
-              <p className="text-xs text-muted-foreground">Log back in and continue where you left off.</p>
-            </div>
-            <Button asChild variant="outline" className="rounded-full">
-              <Link to="/auth">Open auth page</Link>
-            </Button>
           </div>
         </section>
 
@@ -340,7 +324,7 @@ export default function AuthPage() {
                     type="text"
                     value={signupForm.fullName}
                     onChange={updateSignupField("fullName")}
-                    placeholder="Ada Lovelace"
+                    placeholder="Enter your full name"
                     autoComplete="name"
                     required
                     className="h-11 rounded-xl bg-background/60"
@@ -354,6 +338,18 @@ export default function AuthPage() {
                     onChange={updateSignupField("email")}
                     placeholder="you@example.com"
                     autoComplete="email"
+                    required
+                    className="h-11 rounded-xl bg-background/60"
+                  />
+                </Field>
+
+                <Field label="Username" icon={AtSign}>
+                  <Input
+                    type="text"
+                    value={signupForm.username}
+                    onChange={updateSignupField("username")}
+                    placeholder="Enter a unique username"
+                    autoComplete="username"
                     required
                     className="h-11 rounded-xl bg-background/60"
                   />
@@ -404,15 +400,9 @@ export default function AuthPage() {
                       type="file"
                       accept="image/*"
                       onChange={updateSignupField("profilePicture")}
-                      required
                       className="hidden"
                     />
                   </label>
-                  {signupForm.profilePicture ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Selected: {signupForm.profilePicture.name}
-                    </p>
-                  ) : null}
                 </Field>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">

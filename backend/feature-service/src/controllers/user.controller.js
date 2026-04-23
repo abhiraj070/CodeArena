@@ -7,13 +7,17 @@ import {joinedMyRoom} from "../socket/socket.js"
 
 
 const register= asyncHandler(async (req,res) => {
-    const {fullName, email, password}= req.body
-    if(!fullName || !email || !password){
+    const {fullName, username, email, password}= req.body
+    if(!fullName || !username || !email || !password){
         throw new ApiError(400, "All fields are required")
     }
     const isUserNew= await User.findOne({email})
     if(isUserNew){
         throw new ApiError(400, "User already exists")
+    }
+    const isUsernameTaken = await User.findOne({ username: username.trim().toLowerCase() })
+    if(isUsernameTaken){
+        throw new ApiError(400, "Username is already taken")
     }
     let profilePicturePath
     if(req.file){
@@ -24,16 +28,14 @@ const register= asyncHandler(async (req,res) => {
     }
 
     const cloudinaryResponse = await uploadOnCloudinary(profilePicturePath)
-    if(!cloudinaryResponse){
-        throw new ApiError(500, "Error while uploading picture on cloudinary")
-    }
-    const profilePictureUrl = cloudinaryResponse.url
+    const profilePictureUrl = cloudinaryResponse?.url 
     
     const user= await User.create({
         fullName,
+        username,
         email,
         password,
-        profilePictureUrl
+        profilePicture: profilePictureUrl
     })
     if(!user){
         throw new ApiError(500, "Error while creating user")
