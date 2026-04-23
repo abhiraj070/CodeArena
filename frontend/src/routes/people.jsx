@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input.jsx";
 import { Search } from "lucide-react";
 import { conversations as initialConversations } from "@/lib/mock-data.js";
 import { cn } from "@/lib/utils.js";
+import axios from "axios";
 
 export default function PeoplePage() {
   const [search, setSearch] = useState("");
@@ -17,11 +18,30 @@ export default function PeoplePage() {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeChatId, setActiveChatId] = useState(null);
   const [searchedUser, setSearchedUser] = useState(null);
+  const [errorMessage, setErrorMessage]= useState(null)
 
   const handleSearch =async (e) => {
     e.preventDefault();
-    const res= await axios.get(`${search}`)
-    setSearchedUser(res.data.data.user)
+    const query = search.trim();
+
+    if(query === ""){
+      setSearchedUser(null);
+      setErrorMessage(null)
+      return
+    }
+
+    try {
+      const res= await axios.get(`/feature/v1/user/${query}`)
+      setSearchedUser(res.data.data.user)
+      setErrorMessage(null)
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to add question";
+        setSearchedUser(null)
+        setErrorMessage(message)
+    }
   };
 
   const handleSendInvite = ({ user, message, code }) => {
@@ -83,7 +103,7 @@ export default function PeoplePage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name..."
+                placeholder="Search by username..."
                 className="h-10 rounded-full pl-9"
               />
             </div>
@@ -98,13 +118,13 @@ export default function PeoplePage() {
             <Card className="flex items-center gap-3 p-4">
               <div className="relative">
                 <Avatar className="h-11 w-11">
-                  <AvatarImage src={searchedUser.avatar} alt={searchedUser.name} />
-                  <AvatarFallback>{searchedUser.name.slice(0, 2)}</AvatarFallback>
+                  <AvatarImage src={searchedUser.profilePicture} alt={searchedUser.fullName} />
+                  <AvatarFallback>{searchedUser.fullName.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 <span
                   className={cn(
                     "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-card",
-                    searchedUser.online ? "bg-emerald-500" : "bg-zinc-300",
+                    searchedUser.isOnline ? "bg-emerald-500" : "bg-zinc-300",
                   )}
                 />
               </div>
@@ -121,10 +141,12 @@ export default function PeoplePage() {
               </Button>
             </Card>
           ) : (
-            <p className="text-sm text-muted-foreground">Search for a user to display them here.</p>
+            errorMessage? <p className="text-sm text-muted-foreground">{errorMessage}</p> :<p className="text-sm text-muted-foreground">Search for a user to display them here.</p>
           )}
         </div>
+        
       </main>
+      
 
       <InviteDialog
         user={inviteUser}
