@@ -16,8 +16,8 @@ export function QuestionContainer({questionAdded}) {
   const [cursor, setCursor]= useState(null)
   const [hasMore, setHasMore]= useState(true)
   const [loading, setLoading]= useState(true)
+  const [filteredQuestions, setFilteredQuestions]= useState([])
 
-  const query = search.trim().toLowerCase()
   const getDifficultyDotColor = (difficulty) => {
     const value = difficulty?.toLowerCase()
     if (value === "hard") return "text-red-500"
@@ -25,15 +25,6 @@ export function QuestionContainer({questionAdded}) {
     if (value === "easy") return "text-green-500"
     return "text-muted-foreground"
   }
-
-  const filtered = !query
-    ? questions
-    : questions.filter((q) => {
-        const title = q?.title?.toLowerCase() ?? ""
-        const difficulty = q?.difficulty?.toLowerCase() ?? ""
-        return title.includes(query) || difficulty.includes(query)
-      })
-
   const mergeUniqueById = (existing, incoming) => {
     const seen = new Set(existing.map((item) => item?._id).filter(Boolean))
     const nextItems = incoming.filter((item) => {
@@ -60,6 +51,7 @@ export function QuestionContainer({questionAdded}) {
       const nextCursor = res?.data?.data?.nextCursor ?? null
 
       setQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
+      setFilteredQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
       setCursor(nextCursor)
       const more = Boolean(nextCursor)
       setHasMore(more)
@@ -68,7 +60,7 @@ export function QuestionContainer({questionAdded}) {
     } finally {
       setLoading(false)
     }
-  },[])
+  },[cursor,hasMore])
 
   useEffect(()=>{
     fetchRef.current= fetchQuestions
@@ -85,6 +77,11 @@ export function QuestionContainer({questionAdded}) {
           console.log("got the new question");
           
           setQuestions((prev) => {
+            const exists = prev.some((item) => item._id === latestQuestion._id)
+            if (exists) return prev
+            return mergeUniqueById([latestQuestion], prev)
+          })
+          setFilteredQuestions((prev) => {
             const exists = prev.some((item) => item._id === latestQuestion._id)
             if (exists) return prev
             return mergeUniqueById([latestQuestion], prev)
@@ -118,6 +115,24 @@ export function QuestionContainer({questionAdded}) {
     return () => observer.disconnect()
   }, [questions.length])
 
+  function searched(searchInBox){
+    setSearch(searchInBox)
+    if(searchInBox.trim()===""){
+      setFilteredQuestions(questions)
+      return
+    }
+    
+    console.log("search initiated")
+    
+    const searchWords= search.split(/\s+/)
+    const filtredQuestions= questions.filter((question)=> {
+      return searchWords.every(word=>question.title.toLowerCase().trim().includes(word.toLowerCase().trim()))
+    })
+    setFilteredQuestions(filtredQuestions)
+    console.log("search done")
+    
+  }
+
   return (
     <Card className="flex h-[calc(100vh-7.5rem)] flex-col overflow-hidden p-0">
       <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -129,7 +144,7 @@ export function QuestionContainer({questionAdded}) {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => searched(e.target.value)}
             placeholder="Search questions"
             className="h-9 rounded-full border-border bg-muted/40 pl-9 focus-visible:ring-primary"
           />
@@ -139,13 +154,13 @@ export function QuestionContainer({questionAdded}) {
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-10 text-center text-sm text-muted-foreground">Loading questions...</div>
-        ) : questions.length === 0 ? (
+        ) : filteredQuestions.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">
             No questions match "{search}".
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {questions.map((q, i) => (
+            {filteredQuestions.map((q, i) => (
               <li key={q._id}>
                 <Link
                   to={`/question/${q._id}`}
