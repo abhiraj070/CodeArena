@@ -11,15 +11,20 @@ import {
 } from "@/components/ui/dropdown-menu.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { currentUser } from "@/lib/mock-data.js";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
+import { useUser } from "@/context/user.context.jsx";
 
 export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
+  const {user, setUser}= useUser()
+  const displayName = user?.fullName || "User";
+  const avatarFallback = displayName.slice(0, 2).toUpperCase();
+  console.log("user:",user);
+  
 
   const handleLogout = () => {
-    localStorage.removeItem("codearena-auth-user");
-    localStorage.removeItem("codearena-registered-user");
+    localStorage.removeItem("user");
+    setUser(null);
     window.location.assign("/auth");
   };
 
@@ -61,16 +66,15 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
             <DropdownMenuTrigger asChild>
               <button className="rounded-full ring-offset-background transition focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                 <Avatar className="h-9 w-9 border border-border">
-                  <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                  <AvatarFallback>AM</AvatarFallback>
+                  <AvatarImage src={user?.profilePicture || ""} alt={displayName} />
+                  <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{currentUser.name}</span>
-                  <span className="text-xs text-muted-foreground">{currentUser.handle}</span>
+                  <span className="text-sm font-medium">{displayName}</span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   AtSign,
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { cn } from "@/lib/utils.js";
+import { useUser } from "@/context/user.context.jsx";
 
 const EMPTY_LOGIN_FORM = {
   email: "",
@@ -35,6 +36,7 @@ const EMPTY_SIGNUP_FORM = {
 };
 
 export default function AuthPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState("login");
   const [loginForm, setLoginForm] = useState(EMPTY_LOGIN_FORM);
   const [signupForm, setSignupForm] = useState(EMPTY_SIGNUP_FORM);
@@ -42,7 +44,8 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", text: "" });
   const [profilePreview, setProfilePreview] = useState("");
-
+  const {setUser}= useUser()
+  
   useEffect(() => {
     if (!signupForm.profilePicture) {
       setProfilePreview("");
@@ -92,12 +95,13 @@ export default function AuthPage() {
         password: loginForm.password,
       });
 
-      const user = response?.data?.data?.user ?? null;
-      if (user) {
-        localStorage.setItem("codearena-auth-user", JSON.stringify(user));
+      const loggeduser = response?.data?.data?.user ?? null;
+      if (loggeduser) {
+        localStorage.setItem("user", JSON.stringify(loggeduser));
+        setUser(loggeduser);
       }
 
-      window.location.assign("/");
+      navigate("/", { replace: true });
     } catch (error) {
       setFeedback({
         type: "error",
@@ -129,9 +133,10 @@ export default function AuthPage() {
 
       const response = await axios.post("/feature/v1/user/register", payload);
 
-      const user = response?.data?.data?.user ?? null;
-      if (user) {
-        localStorage.setItem("codearena-registered-user", JSON.stringify(user));
+      const signeduser = response?.data?.data?.user ?? null;
+      if (signeduser) {
+        localStorage.setItem("user", JSON.stringify(signeduser));
+        setUser(signeduser);
       }
 
       setLoginForm({

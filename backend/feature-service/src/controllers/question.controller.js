@@ -30,14 +30,14 @@ const getAllQuestion= asyncHandler(async (req,res) => {
     console.log(14);
     
     const query= cursor && mongoose.Types.ObjectId.isValid(cursor)? {_id:{$lt: new mongoose.Types.ObjectId(cursor)}} : {}
-    console.log(query);
+    //console.log(query);
     
     const questionToDisplay= await Questions.aggregate([
         {$match: {...query}},
         {$sort: {createdAt: -1}},
         {$limit: parsedLimit}
     ])
-    console.log(questionToDisplay);
+    //console.log(questionToDisplay);
     
     if(questionToDisplay.length===0){
         throw new ApiError(404, "No more questions to display")

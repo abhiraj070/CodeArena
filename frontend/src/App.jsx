@@ -5,26 +5,21 @@ import AuthPage from "./routes/auth.jsx";
 import ProfilePage from "./routes/profile.jsx";
 import QuestionPage from "./routes/question.$id.jsx";
 import NotFoundPage from "./routes/NotFound.jsx";
+import { useUser } from "./context/user.context.jsx";
 
 export default function App() {
-  let hasStoredUser = false;
-
-  try {
-    const storedUser = localStorage.getItem("codearena-auth-user");
-    hasStoredUser = Boolean(storedUser && storedUser !== "null");
-  } catch {
-    hasStoredUser = false;
-  }
+  const { user } = useUser();
+  const isAuthenticated = Boolean(user);
 
   return (
     <Routes>
       <Route
         path="/"
-        element={hasStoredUser ? <IndexPage /> : <Navigate to="/auth" replace />}
+        element={isAuthenticated ? <IndexPage /> : <Navigate to="/auth" replace />}
       />
       <Route
         path="/auth"
-        element={hasStoredUser ? <Navigate to="/" replace /> : <AuthPage />}
+        element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />}
       />
       <Route path="/people" element={<PeoplePage />} />
       <Route path="/profile" element={<ProfilePage />} />

@@ -9,13 +9,20 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localFilePath) => {
   try {
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new Error("Missing Cloudinary credentials in environment variables");
+    }
     if (!localFilePath) return null;
     const uploadResult = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
+    await fs.promises.unlink(localFilePath).catch(() => {});
     return uploadResult;
   } catch (error) {
-    return null;
+    if (localFilePath) {
+      await fs.promises.unlink(localFilePath).catch(() => {});
+    }
+    throw new Error(`Cloudinary upload failed: ${error?.message || "Unknown error"}`);
   }
 };
 

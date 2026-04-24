@@ -28,7 +28,14 @@ const register= asyncHandler(async (req,res) => {
     }
 
     const cloudinaryResponse = await uploadOnCloudinary(profilePicturePath)
-    const profilePictureUrl = cloudinaryResponse?.url 
+    console.log("response:",cloudinaryResponse);
+    
+    const profilePictureUrl = cloudinaryResponse?.secure_url || cloudinaryResponse?.url
+    if(!profilePictureUrl){
+        throw new ApiError(500, "Profile picture upload failed")
+    }
+    console.log("pp:",profilePictureUrl);
+    
     
     const user= await User.create({
         fullName,
