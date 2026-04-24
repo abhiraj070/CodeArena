@@ -108,4 +108,121 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user }, "User fetched successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername}
+const updatePreferredLanguage = asyncHandler(async (req, res) => {
+    const { userId, language } = req.body
+
+    if(!userId){
+        throw new ApiError(400, "userId is required")
+    }
+
+    const normalizedLanguage = language?.trim()?.toLowerCase()
+    const allowedLanguages = ["javascript", "python", "cpp", "java", "typescript"]
+
+    if(!normalizedLanguage || !allowedLanguages.includes(normalizedLanguage)){
+        throw new ApiError(400, "Invalid language")
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { language: normalizedLanguage },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    if(!updatedUser){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { user: updatedUser }, "Language updated successfully"))
+})
+
+const updateProfile = asyncHandler(async (req, res) => {
+    const { userId, fullName, username, email, bio, profilePicture, language } = req.body
+
+    if(!userId){
+        throw new ApiError(400, "userId is required")
+    }
+
+    const user = await User.findById(userId)
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    const updatePayload = {}
+
+    if(typeof fullName === "string"){
+        const normalizedFullName = fullName.trim()
+        if(!normalizedFullName){
+            throw new ApiError(400, "fullName cannot be empty")
+        }
+        updatePayload.fullName = normalizedFullName
+    }
+
+    if(typeof username === "string"){
+        const normalizedUsername = username.trim().toLowerCase()
+        if(!normalizedUsername){
+            throw new ApiError(400, "username cannot be empty")
+        }
+
+        const existingByUsername = await User.findOne({
+            username: normalizedUsername,
+            _id: { $ne: userId }
+        })
+
+        if(existingByUsername){
+            throw new ApiError(400, "Username is already taken")
+        }
+
+        updatePayload.username = normalizedUsername
+    }
+
+    if(typeof email === "string"){
+        const normalizedEmail = email.trim().toLowerCase()
+        if(!normalizedEmail){
+            throw new ApiError(400, "email cannot be empty")
+        }
+
+        const existingByEmail = await User.findOne({
+            email: normalizedEmail,
+            _id: { $ne: userId }
+        })
+
+        if(existingByEmail){
+            throw new ApiError(400, "Email is already in use")
+        }
+
+        updatePayload.email = normalizedEmail
+    }
+
+    if(typeof bio === "string"){
+        updatePayload.bio = bio.trim()
+    }
+
+    if(typeof profilePicture === "string"){
+        updatePayload.profilePicture = profilePicture.trim()
+    }
+
+    if(typeof language === "string"){
+        const normalizedLanguage = language.trim().toLowerCase()
+        const allowedLanguages = ["javascript", "python", "cpp", "java", "typescript"]
+
+        if(!allowedLanguages.includes(normalizedLanguage)){
+            throw new ApiError(400, "Invalid language")
+        }
+
+        updatePayload.language = normalizedLanguage
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        updatePayload,
+        { new: true }
+    ).select("-password -refreshToken")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { user: updatedUser }, "Profile updated successfully"))
+})
+
+export {register, login, pastConnectedUsers, getUserByUsername, updatePreferredLanguage, updateProfile}

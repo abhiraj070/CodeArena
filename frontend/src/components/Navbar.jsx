@@ -18,8 +18,8 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
   const {user, setUser}= useUser()
   const displayName = user?.fullName || "User";
+  const username = user?.username || displayName;
   const avatarFallback = displayName.slice(0, 2).toUpperCase();
-  console.log("user:",user);
   
 
   const handleLogout = () => {
@@ -64,11 +64,13 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full ring-offset-background transition focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <button className="flex items-center gap-2 rounded-full ring-offset-background transition focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                 <Avatar className="h-9 w-9 border border-border">
                   <AvatarImage src={user?.profilePicture || ""} alt={displayName} />
                   <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
+                <span className="max-w-28 truncate text-sm font-medium text-foreground">{username}</span>
+
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
