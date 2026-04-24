@@ -8,8 +8,8 @@ const router= Router()
 router.route("/login").post(login)
 router.route("/register").post(upload.single("profilePicture"), register)
 router.route("/pastUsersConnected").get(VerifyJWT,pastConnectedUsers)
-router.route("/language").patch(updatePreferredLanguage)
-router.route("/profile").patch(updateProfile)
-router.route("/:username").get(getUserByUsername)
+router.route("/language").patch(VerifyJWT,updatePreferredLanguage)
+router.route("/profile").patch(VerifyJWT,updateProfile)
+router.route("/:username").get(VerifyJWT,getUserByUsername)
 
 export default router

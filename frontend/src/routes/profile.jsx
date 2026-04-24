@@ -111,6 +111,8 @@ export default function ProfilePage() {
             <div className="flex-1">
               <h1 className="text-xl font-semibold">{user.fullName}</h1>
               <p className="text-sm text-muted-foreground">@{user.username}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{user.bio?.trim() ? user.bio : "No bio added yet."}</p>
+
               <p className="mt-2 text-sm text-muted-foreground">Preferred language: {currentLanguageLabel}</p>
             </div>
             <div className="flex gap-2">

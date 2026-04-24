@@ -56,6 +56,9 @@ const register= asyncHandler(async (req,res) => {
 
 const login= asyncHandler(async (req, res) => {
     const {email, password}= req.body
+    if(!email || !password){
+        throw new ApiError(400,"All fields are required")
+    }
     const user= await User.findOne({email})
     if(!user){
         throw new ApiError(400, "User not registered")
@@ -70,13 +73,22 @@ const login= asyncHandler(async (req, res) => {
     if(!accessToken || !refreshToken){
         throw new ApiError(500,"Error while generating tokens")
     }
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    }
+
     user.refreshToken= refreshToken;
     await user.save({validateBeforeSave: false})
     const loggedUser= await User.findById(user._id).select("-password -refreshToken")
 
     return res
     .status(200)
-    .json(new ApiResponse(200,{user: loggedUser},"User logged in successfully"))
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200,{user: loggedUser, accessToken},"User logged in successfully"))
 })
 
 const pastConnectedUsers= asyncHandler(async (req, res) => {

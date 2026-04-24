@@ -4,10 +4,11 @@ import { VerifyJWT } from "../middleware/auth.middleware.js";
 import { parseTestCases } from "../middleware/parseTestCases.js";
 const router= Router()
 
-router.route("/startQues").get(startQuestion)
-router.route("/getQuestions").get(getAllQuestion)
-router.route("/getAQuestion/:ques_id").get(getAQuestion)
-router.route("/newlyCreatedQuestion").get(getNewlyCreatedQuestion)
-router.route("/storeQuestion").post(parseTestCases, storeAQuestion)
+
+router.route("/startQues").get(VerifyJWT,startQuestion)
+router.route("/getQuestions").get(VerifyJWT,getAllQuestion)
+router.route("/getAQuestion/:ques_id").get(VerifyJWT,getAQuestion)
+router.route("/newlyCreatedQuestion").get(VerifyJWT,getNewlyCreatedQuestion)
+router.route("/storeQuestion").post(VerifyJWT, parseTestCases, storeAQuestion)
 
 export default router
