@@ -9,7 +9,9 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localFilePath) => {
   try {
-    if (!cloudName || !apiKey || !apiSecret) {
+    const { CLOUD_NAME, API_KEY, API_SECRET } = process.env;
+
+    if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
       throw new Error("Missing Cloudinary credentials in environment variables");
     }
     if (!localFilePath) return null;
