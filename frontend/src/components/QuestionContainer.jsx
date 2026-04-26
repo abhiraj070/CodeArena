@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { DifficultyBadge } from "./DifficultyBadge";
@@ -20,7 +20,7 @@ export function QuestionContainer({questionAdded}) {
   const [filteredQuestions, setFilteredQuestions]= useState([])
   const {socket}= useSocket()
   const {user}= useUser()
-  const [roomcode, setRoomcode]= useState(null)
+  const navigate = useNavigate()
 
 
 
@@ -135,25 +135,23 @@ export function QuestionContainer({questionAdded}) {
   // CREATE ARENA BUTTON
 
   const handleCreateArena = async (questionId) => {
-    try {
-      await axios.get(`/feature/v1/question/startQues/${questionId}`)
-      window.alert("Arena created successfully")
-      let roomId="",cnt=0;
-      while(cnt!=3){
-        for(const i=0;i<4;i++){
-          roomId+=Math.ceil(Math.random()*10)
-        }
-        cnt++
-        if(cnt==3) continue;
-        roomId+="-"
+    let roomId = ""
+    let cnt = 0
+    while (cnt != 3) {
+      for (let i = 0; i < 4; i++) {
+        roomId += Math.ceil(Math.random() * 10)
       }
-      socket.emit("create-room",{roomId: roomId,userame: `${user.userame}`,id: user._id})
-      setRoomcode(roomId)
-    } catch (error) {
-      const message =
-        error?.response?.data?.message || error?.message || "Failed to create arena"
-      window.alert(message)
+      cnt++
+      if (cnt == 3) continue
+      roomId += "-"
     }
+
+    navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
+
+    if (!socket || !user?._id) return
+    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id })
+
+
   }
 
   

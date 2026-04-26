@@ -1,5 +1,5 @@
-import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { Link, useSearchParams, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button.jsx";
 import {
@@ -10,15 +10,54 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
-import { questions, STARTER_CODE, LANGUAGES } from "@/lib/mock-data.js";
+import { STARTER_CODE, LANGUAGES } from "@/lib/mock-data.js";
 import { ArrowLeft, Code2, Play, Send } from "lucide-react";
-import NotFoundPage from "./NotFound.jsx";
+import axios from "axios";
+
+
+
 export default function QuestionPage() {
+
+  const [question, setQuestion] = useState(null)
   const { id } = useParams();
-  const question = questions.find((q) => q.id === id);
-  if (!question) return <NotFoundPage />;
   const [language, setLanguage] = useState("javascript");
   const [code, setCode] = useState(STARTER_CODE.javascript);
+  const [searchParams]= useSearchParams()
+  const roomId = searchParams.get("roomId")
+
+  useEffect(() => {
+    if (!roomId) return
+
+    const alertKey = `${id}-${roomId}`
+    window.__codeArenaRoomAlerts = window.__codeArenaRoomAlerts || {}
+    if (window.__codeArenaRoomAlerts[alertKey]) return
+
+    window.__codeArenaRoomAlerts[alertKey] = true
+    window.alert(`Room ID: ${roomId}`)
+  }, [id, roomId])
+
+  useEffect(()=>{
+    const fetchQuestion=async ()=>{
+      try {
+        const res= await axios.get(`/feature/v1/question/startQues/${id}`)
+        setQuestion( res.data.data.question)
+      } catch (error) {
+        console.error("error while fetching question",error);
+        
+      }
+    }
+    fetchQuestion()
+  },[])
+
+  
+
+  if (!question) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading question...</p>
+      </div>
+    )
+  }
 
   const onLanguageChange = (val) => {
     const lang = val;
@@ -43,9 +82,11 @@ export default function QuestionPage() {
           <h1 className="text-sm font-semibold sm:text-base">{question.title}</h1>
           <DifficultyBadge difficulty={question.difficulty} />
         </div>
-        <span className="hidden text-xs text-muted-foreground sm:inline">
-          Acceptance · {question.acceptance.toFixed(1)}%
-        </span>
+        {roomId && (
+          <span className="rounded-md border border-primary/50 bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary sm:text-base">
+            RoomId: {roomId}
+          </span>
+        )}
       </header>
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -53,31 +94,30 @@ export default function QuestionPage() {
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-lg font-semibold">{question.title}</h2>
           </div>
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {question.tags.map((t) => (
-              <span key={t} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                {t}
-              </span>
-            ))}
-          </div>
 
           <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Description
           </h3>
           <p className="mb-5 text-sm leading-relaxed text-foreground/90">{question.description}</p>
 
-          {question.example && (
+          {question.visibleTestCases && (
             <>
               <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Example
               </h3>
-              <pre className="overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground">
-                <span className="text-muted-foreground">Input:  </span>
-                {question.example.input}
-                {"\n"}
-                <span className="text-muted-foreground">Output: </span>
-                <span className="text-primary">{question.example.output}</span>
-              </pre>
+              {question.visibleTestCases.map((tc, index) => (
+                <pre
+                  key={tc._id ?? `${tc.input}-${tc.output}-${index}`}
+                  className="mb-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground"
+                >
+                  <span className="text-muted-foreground">Input:  </span>
+                  {tc.input}
+                  {"\n"}
+                  <span className="text-muted-foreground">Output: </span>
+                  <span className="text-primary">{tc.output}</span>
+                </pre>
+              ))}
+              
             </>
           )}
 

@@ -65,7 +65,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(cachedValue){
         return res
         .status(200)
-        .json(new ApiResponse(200,{question: JSON.parse(cachedValue), user},"successfully started a workspace for question"))
+        .json(new ApiResponse(200,{question: JSON.parse(cachedValue)},"successfully started a workspace for question"))
     }
     const question= await Questions.findById(ques_id)
     if(!question){
@@ -74,21 +74,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     await client.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", REDIS_TTL_SECONDS)
     return res
     .status(200)
-    .json(new ApiResponse(200,{question, user},"successfully started a workspace for question"))
-})
-
-const getAQuestion= asyncHandler(async (req, res) => {
-    const ques_id= req.params.ques_id
-    if(!ques_id){
-        throw new ApiError(400,"question id is required")
-    }
-    const question= await Questions.findById(ques_id).select("-visibleInput -VisibleOutput -description")
-    if(!question){
-        throw new ApiError(404,"question not found")
-    }
-    return res
-    .status(200)
-    .json(new ApiResponse(200,question,"Question featched successfully"))
+    .json(new ApiResponse(200,{question},"successfully started a workspace for question"))
 })
 
 const storeAQuestion= asyncHandler(async (req, res) => {
@@ -133,4 +119,4 @@ const getNewlyCreatedQuestion= asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, question, "Latest question fetched successfully"))
 })
 
-export {startQuestion, getAllQuestion, getAQuestion, storeAQuestion, getNewlyCreatedQuestion}
+export {startQuestion, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}

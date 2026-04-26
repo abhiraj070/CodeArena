@@ -15,7 +15,7 @@ import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
 import { useUser } from "@/context/user.context.jsx";
 import { useSocket } from "@/context/socket.context";
 
-export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
+export function Navbar({ onOpenChat, onJoinRoom, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
   const {user, setUser}= useUser()
   const displayName = user?.fullName || "User";
@@ -30,6 +30,14 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
     socket.disconnect()
     window.location.assign("/auth");
   };
+
+  const handleJoinRoomClick = () => {
+    if (onJoinRoom) {
+      onJoinRoom()
+      return
+    }
+    window.alert("Join room clicked")
+  }
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/85 backdrop-blur">
@@ -53,6 +61,14 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
             onClick={() => setAddQuestionOpen(true)}
           >
             <Plus className="h-4 w-4" /> Add question
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleJoinRoomClick}
+          >
+            Join Room
           </Button>
 
           <Button

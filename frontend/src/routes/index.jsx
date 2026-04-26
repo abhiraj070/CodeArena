@@ -13,6 +13,10 @@ export default function IndexPage() {
   const [activeChatId, setActiveChatId] = useState(null);
   const [questionAdded, setQuestionAdded]= useState(false)
 
+  const handleJoinRoom = () => {
+    window.alert("Join Room clicked")
+  }
+
 
   const handleSendInvite = ({ user, message, code }) => {
     if (!user || !message) return;
@@ -60,6 +64,7 @@ export default function IndexPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar onOpenChat={() => setChatOpen(true)} 
+        onJoinRoom={handleJoinRoom}
         setQuestionAdded={setQuestionAdded}
         questionAdded={questionAdded}
         />
