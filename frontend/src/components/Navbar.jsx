@@ -12,11 +12,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
+import { JoinRoomDialog } from "@/components/JoinRoomDialog.jsx";
 import { useUser } from "@/context/user.context.jsx";
 import { useSocket } from "@/context/socket.context";
 
-export function Navbar({ onOpenChat, onJoinRoom, setQuestionAdded, questionAdded }) {
+export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
+  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
+  const [roomIdInput, setRoomIdInput] = useState("");
   const {user, setUser}= useUser()
   const displayName = user?.fullName || "User";
   const username = user?.username || displayName;
@@ -32,11 +35,20 @@ export function Navbar({ onOpenChat, onJoinRoom, setQuestionAdded, questionAdded
   };
 
   const handleJoinRoomClick = () => {
-    if (onJoinRoom) {
-      onJoinRoom()
-      return
-    }
-    window.alert("Join room clicked")
+    setJoinRoomOpen(true)
+  }
+
+  const handleJoinRoomEnter = () => {
+    const roomId = roomIdInput.trim()
+    if (!roomId) return
+
+    socket.emit("join-room", {
+      roomId,
+      username,
+      id: user?._id,
+    })
+    setJoinRoomOpen(false)
+    setRoomIdInput("")
   }
 
   return (
@@ -66,6 +78,7 @@ export function Navbar({ onOpenChat, onJoinRoom, setQuestionAdded, questionAdded
           <Button
             variant="outline"
             size="sm"
+            className="border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700"
             onClick={handleJoinRoomClick}
           >
             Join Room
@@ -120,6 +133,14 @@ export function Navbar({ onOpenChat, onJoinRoom, setQuestionAdded, questionAdded
         open={addQuestionOpen}
         onClose={() => setAddQuestionOpen(false)}
         onSubmit={()=> {setAddQuestionOpen(false),setQuestionAdded(!questionAdded)}}
+      />
+
+      <JoinRoomDialog
+        open={joinRoomOpen}
+        onOpenChange={setJoinRoomOpen}
+        roomId={roomIdInput}
+        onRoomIdChange={setRoomIdInput}
+        onEnter={handleJoinRoomEnter}
       />
     </header>
   );

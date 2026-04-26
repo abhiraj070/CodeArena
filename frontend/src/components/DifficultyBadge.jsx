@@ -11,7 +11,7 @@ export function DifficultyBadge({ difficulty, className }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium leading-none",
         styles[value] || "text-muted-foreground bg-muted",
         className,
       )}
