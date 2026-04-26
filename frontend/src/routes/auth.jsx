@@ -1,26 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  AtSign,
-  ArrowRight,
-  CheckCircle2,
-  Code2,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  Mail,
-  ShieldCheck,
-  Sparkles,
-  Upload,
-  User,
-} from "lucide-react";
+import {AtSign, ArrowRight, CheckCircle2, Code2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, Upload, User} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context.jsx";
+import { useSocket } from "@/context/socket.context";
 
 const EMPTY_LOGIN_FORM = {
   email: "",
@@ -44,82 +32,52 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", text: "" });
   const [profilePreview, setProfilePreview] = useState("");
-  const {setUser}= useUser()
+  const {setUser, user}= useUser()
+  const {socket}= useSocket()
   
+
+
+  // SOCKET
+  useEffect(()=>{
+    socket.on("connect",()=>{
+      console.log("socket connected from the client side");
+    })
+    return ()=> socket.off("connect")
+
+  },[socket])
+
+
+
+
+
+  // SIGNUP
+
   useEffect(() => {
     if (!signupForm.profilePicture) {
       setProfilePreview("");
       return undefined;
     }
-
     const previewUrl = URL.createObjectURL(signupForm.profilePicture);
     setProfilePreview(previewUrl);
-
     return () => URL.revokeObjectURL(previewUrl);
   }, [signupForm.profilePicture]);
 
-  const updateLoginField = (field) => (event) => {
-    setLoginForm((prev) => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
-  };
 
   const updateSignupField = (field) => (event) => {
     const value = field === "profilePicture" ? event.target.files?.[0] ?? null : event.target.value;
-
     setSignupForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
-
-  const switchMode = (nextMode) => {
-    setMode(nextMode);
-    setFeedback({ type: "", text: "" });
-    setShowPassword(false);
-  };
-
-  const getErrorMessage = (error, fallbackMessage) =>
-    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallbackMessage;
-
-  const handleLoginSubmit = async (event) => {
-    event.preventDefault();
-
-    setLoading(true);
-    setFeedback({ type: "", text: "" });
-
-    try {
-      const response = await axios.post("/feature/v1/user/login", {
-        email: loginForm.email.trim(),
-        password: loginForm.password,
-      });
-
-      const loggeduser = response?.data?.data?.user ?? null;
-      if (loggeduser) {
-        localStorage.setItem("user", JSON.stringify(loggeduser));
-        setUser(loggeduser);
-      }
-
-      navigate("/", { replace: true });
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        text: getErrorMessage(error, "Unable to sign in right now."),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleSignupSubmit = async (event) => {
     event.preventDefault();
-
     if (!signupForm.profilePicture) {
       setFeedback({ type: "error", text: "Profile picture is required." });
       return;
     }
-
     setLoading(true);
     setFeedback({ type: "", text: "" });
 
@@ -132,13 +90,15 @@ export default function AuthPage() {
       payload.append("profilePicture", signupForm.profilePicture);
 
       const response = await axios.post("/feature/v1/user/register", payload);
-
       const signeduser = response?.data?.data?.user ?? null;
       if (signeduser) {
         localStorage.setItem("user", JSON.stringify(signeduser));
         setUser(signeduser);
+        socket.connect()
+        socket.once("connect",()=>{
+          socket.emit("register",{userId: signeduser._id})
+        })
       }
-
       setLoginForm({
         email: signupForm.email.trim(),
         password: "",
@@ -158,7 +118,76 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
+
+    
   };
+
+
+
+
+  
+
+  const switchMode = (nextMode) => {
+    setMode(nextMode);
+    setFeedback({ type: "", text: "" });
+    setShowPassword(false);
+  };
+
+
+  const getErrorMessage = (error, fallbackMessage) =>
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallbackMessage;
+
+
+
+
+
+  // LOGIN
+
+  const updateLoginField = (field) => (event) => {
+    setLoginForm((prev) => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
+  };
+
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+
+    setLoading(true);
+    setFeedback({ type: "", text: "" });
+    
+
+    try {
+      const response = await axios.post("/feature/v1/user/login", {
+        email: loginForm.email.trim(),
+        password: loginForm.password,
+      });
+
+      const loggeduser = response?.data?.data?.user ?? null;
+      if (loggeduser) {
+        localStorage.setItem("user", JSON.stringify(loggeduser));
+        setUser(loggeduser);
+        socket.connect()
+        socket.once("connect",()=>{
+          socket.emit("register",{userId:loggeduser._id})
+        })
+      }
+
+      navigate("/", { replace: true });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        text: getErrorMessage(error, "Unable to sign in right now."),
+      });
+    } finally {
+      setLoading(false);
+    }
+
+    
+  };
+
+  
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">

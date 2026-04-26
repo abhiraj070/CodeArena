@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card.jsx";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { Circle, Search } from "lucide-react";
 import axios from "axios";
+import { useSocket } from "@/context/socket.context";
+import { useUser } from "@/context/user.context";
 
 
 export function QuestionContainer({questionAdded}) {
@@ -16,6 +18,12 @@ export function QuestionContainer({questionAdded}) {
   const [hasMore, setHasMore]= useState(true)
   const [loading, setLoading]= useState(false)
   const [filteredQuestions, setFilteredQuestions]= useState([])
+  const {socket}= useSocket()
+  const {user}= useUser()
+  const [roomcode, setRoomcode]= useState(null)
+
+
+
 
   const getDifficultyDotColor = (difficulty) => {
     const value = difficulty?.toLowerCase()
@@ -24,16 +32,12 @@ export function QuestionContainer({questionAdded}) {
     if (value === "easy") return "text-green-500"
     return "text-muted-foreground"
   }
-  const mergeUniqueById = (existing, incoming) => {
-    const seen = new Set(existing.map((item) => item?._id).filter(Boolean))
-    const nextItems = incoming.filter((item) => {
-      const id = item?._id
-      if (!id || seen.has(id)) return false
-      seen.add(id)
-      return true
-    })
-    return [...existing, ...nextItems]
-  }
+  
+
+
+
+
+  // QUESTIONS
 
   useEffect(()=>{
       const getNewlyCreatedQuestion= async () => {
@@ -66,26 +70,6 @@ export function QuestionContainer({questionAdded}) {
     }
   },[questionAdded])
 
-  
-
-  function searched(searchInBox){
-    setSearch(searchInBox)
-    if(searchInBox.trim()===""){
-      setFilteredQuestions(questions)
-      return
-    }
-    
-    console.log("search initiated")
-    
-    const searchWords= searchInBox.split(/\s+/)
-    const filtredQuestions= questions.filter((question)=> {
-      return searchWords.every(word=>question.title.toLowerCase().trim().includes(word.toLowerCase().trim()))
-    })
-    setFilteredQuestions(filtredQuestions)
-    console.log("search done")
-    
-  }
-
   const fetchQuestions= useCallback(async () => {
     if(loading || !hasMore) return
 
@@ -114,18 +98,23 @@ export function QuestionContainer({questionAdded}) {
     
   },[cursor,hasMore,loading])
 
-  const handleCreateArena = async (questionId) => {
-    try {
-      await axios.get(`/feature/v1/question/startQues/${questionId}`)
-      window.alert("Arena created successfully")
-      
-
-    } catch (error) {
-      const message =
-        error?.response?.data?.message || error?.message || "Failed to create arena"
-      window.alert(message)
-    }
+  const mergeUniqueById = (existing, incoming) => {
+    const seen = new Set(existing.map((item) => item?._id).filter(Boolean))
+    const nextItems = incoming.filter((item) => {
+      const id = item?._id
+      if (!id || seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
+    return [...existing, ...nextItems]
   }
+
+
+
+
+
+
+  // INFINITE SCROLL
 
   useEffect(()=>{
     fetchRef.current= fetchQuestions
@@ -142,6 +131,57 @@ export function QuestionContainer({questionAdded}) {
         }
         return () => observer.disconnect();
   }, [])
+
+  // CREATE ARENA BUTTON
+
+  const handleCreateArena = async (questionId) => {
+    try {
+      await axios.get(`/feature/v1/question/startQues/${questionId}`)
+      window.alert("Arena created successfully")
+      let roomId="",cnt=0;
+      while(cnt!=3){
+        for(const i=0;i<4;i++){
+          roomId+=Math.ceil(Math.random()*10)
+        }
+        cnt++
+        if(cnt==3) continue;
+        roomId+="-"
+      }
+      socket.emit("create-room",{roomId: roomId,userame: `${user.userame}`,id: user._id})
+      setRoomcode(roomId)
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || error?.message || "Failed to create arena"
+      window.alert(message)
+    }
+  }
+
+  
+
+
+  // QUESTION SEARCHING
+
+  function searched(searchInBox){
+    setSearch(searchInBox)
+    if(searchInBox.trim()===""){
+      setFilteredQuestions(questions)
+      return
+    }
+    
+    console.log("search initiated")
+    
+    const searchWords= searchInBox.split(/\s+/)
+    const filtredQuestions= questions.filter((question)=> {
+      return searchWords.every(word=>question.title.toLowerCase().trim().includes(word.toLowerCase().trim()))
+    })
+    setFilteredQuestions(filtredQuestions)
+    console.log("search done")
+    
+  }
+
+  
+
+  
 
   return (
     <Card className="flex h-[calc(100vh-7.5rem)] flex-col overflow-hidden p-0">

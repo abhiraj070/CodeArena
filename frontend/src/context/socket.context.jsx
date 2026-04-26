@@ -4,22 +4,16 @@ import { io } from "socket.io-client";
 const socketContext = createContext(null)
 
 export const SocketProvider = ({ children }) => {
-    const socketUrl = "http://localhost:8003"
-    let socket
-    useEffect(()=>{
-        const socket = useMemo(() => {
+        const socket = useMemo(() => { // since in our model the socketProvider component never unmounts so no cleanup effect run so the socket id for a user remains same but in some cases like network drop or tab close the user gets new socket id on relogin
         return io("http://localhost:8003", {
             withCredentials: true,
             autoConnect: false,
         });
     }, []);
 
-    useEffect(() => {
-        socket.connect();
-
+    useEffect(() => { //this is a cleanup effect: a function returned cleanup effect is run when the component unmounts or the effect is re-run due to its dependencies. so when the socketProvider component unmounts or the socket changes the cleanup takes place
         return () => socket.disconnect();
     }, [socket]);
-    },[socket])
     
     return <socketContext.Provider value={socket}>{children}</socketContext.Provider>
 }

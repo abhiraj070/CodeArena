@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx"
 import { Button } from "@/components/ui/button.jsx";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
 import { useUser } from "@/context/user.context.jsx";
+import { useSocket } from "@/context/socket.context";
 
 export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
@@ -20,11 +21,13 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const displayName = user?.fullName || "User";
   const username = user?.username || displayName;
   const avatarFallback = displayName.slice(0, 2).toUpperCase();
+  const {socket}= useSocket()
   
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
+    socket.disconnect()
     window.location.assign("/auth");
   };
 
