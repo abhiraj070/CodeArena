@@ -87,6 +87,10 @@ export default function PeoplePage() {
     setInviteUser(null);
   };
 
+  const handleInvite=async ()=>{
+    
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar onOpenChat={() => setChatOpen(true)} />
@@ -135,7 +139,7 @@ export default function PeoplePage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setInviteUser(searchedUser)}
+                onClick={() => handleInvite(searchedUser)}
               >
                 Invite
               </Button>

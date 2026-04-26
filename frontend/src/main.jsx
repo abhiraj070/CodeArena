@@ -5,15 +5,19 @@ import axios from "axios";
 import App from "./App.jsx";
 import { UserProvider } from "./context/user.context.jsx";
 import "./styles.css";
+import { SocketProvider } from "./context/socket.context.jsx";
 
 axios.defaults.withCredentials = true;
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <UserProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </UserProvider>
+    <SocketProvider>
+      <UserProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </UserProvider>
+    </SocketProvider>
+    
   </React.StrictMode>,
 );

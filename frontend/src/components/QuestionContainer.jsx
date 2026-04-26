@@ -114,6 +114,19 @@ export function QuestionContainer({questionAdded}) {
     
   },[cursor,hasMore,loading])
 
+  const handleCreateArena = async (questionId) => {
+    try {
+      await axios.get(`/feature/v1/question/startQues/${questionId}`)
+      window.alert("Arena created successfully")
+      
+
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || error?.message || "Failed to create arena"
+      window.alert(message)
+    }
+  }
+
   useEffect(()=>{
     fetchRef.current= fetchQuestions
   },[fetchQuestions])
@@ -157,20 +170,26 @@ export function QuestionContainer({questionAdded}) {
           <ul className="divide-y divide-border">
             {filteredQuestions.map((q, i) => (
               <li key={q._id}>
-                <Link
-                  to={`/question/${q._id}`}
-                  className="grid grid-cols-[2rem_1.25rem_1fr_auto_5rem] items-center gap-3 px-4 py-3 transition hover:bg-muted/40"
-                >
+                <div className="grid grid-cols-[2rem_1.25rem_1fr_auto_auto] items-center gap-3 px-4 py-3 transition hover:bg-muted/40">
                   <span className="text-xs text-muted-foreground tabular-nums">{i + 1}.</span>
                   <Circle className={`h-3.5 w-3.5 ${getDifficultyDotColor(q?.difficulty)}`} />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {q.title}
-                    </p>
+                    <Link to={`/question/${q._id}`} className="block">
+                      <p className="truncate text-sm font-medium text-foreground hover:underline">
+                        {q.title}
+                      </p>
+                    </Link>
                     
                   </div>
                   <DifficultyBadge difficulty={q.difficulty} className="text-right" />
-                </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleCreateArena(q._id)}
+                    className="cursor-pointer rounded-md border border-green-600 bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700"
+                  >
+                    Create Arena
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

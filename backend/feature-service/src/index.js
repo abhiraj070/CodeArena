@@ -13,6 +13,8 @@ dbconnect()
         })
         try {
                 initializeIO();
+                console.log("Socket Initilised");
+                
             } catch (error) {
                 console.log("error while initializing socket:",error);
                 return new ApiError(500, "Error while initializing socket")

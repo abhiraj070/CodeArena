@@ -5,7 +5,7 @@ import { parseTestCases } from "../middleware/parseTestCases.js";
 const router= Router()
 
 
-router.route("/startQues").get(VerifyJWT,startQuestion)
+router.route("/startQues/:ques_id").get(VerifyJWT,startQuestion)
 router.route("/getQuestions").get(VerifyJWT,getAllQuestion)
 router.route("/getAQuestion/:ques_id").get(VerifyJWT,getAQuestion)
 router.route("/newlyCreatedQuestion").get(VerifyJWT,getNewlyCreatedQuestion)

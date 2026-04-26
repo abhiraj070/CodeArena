@@ -53,7 +53,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
 })
 
 const startQuestion= asyncHandler(async (req,res) => {
-    const {ques_id}= req.body
+    const ques_id = req.params?.ques_id
     const user= req.user
     if(!user){
         throw new ApiError(401, "Unauthorized request")
