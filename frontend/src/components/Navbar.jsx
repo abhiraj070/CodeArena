@@ -40,6 +40,7 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
     e.preventDefault();
     const roomId = roomIdInput.trim()
     if (!roomId) return
+    console.log("roomId",roomId);
 
     socket.emit("join-room", {
       roomId,
@@ -47,7 +48,7 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
       id: user?._id,
     })
     setRoomIdInput("")
-    navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
+    navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`)
   }
 
   return (
@@ -88,7 +89,7 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
               type="submit"
               className="border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700"
             >
-              Join Room
+              Join Arena
             </Button>
           </form>
 

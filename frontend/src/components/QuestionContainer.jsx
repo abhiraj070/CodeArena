@@ -139,7 +139,7 @@ export function QuestionContainer({questionAdded}) {
     let cnt = 0
     while (cnt != 3) {
       for (let i = 0; i < 4; i++) {
-        roomId += Math.ceil(Math.random() * 10)
+        roomId += Math.floor(Math.random() * 10)
       }
       cnt++
       if (cnt == 3) continue
@@ -150,7 +150,8 @@ export function QuestionContainer({questionAdded}) {
 
     if (!socket || !user?._id) return
     socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id, questionId  })
-
+    console.log("arena created");
+    
 
   }
 

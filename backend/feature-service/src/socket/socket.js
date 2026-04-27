@@ -6,7 +6,8 @@ import { client } from "../redis/redis.js"
 const rooms={},joinedMyRoom={},user={}
 const initializeIO= ()=>{
     io.on("connection",(socket)=>{
-
+        console.log("32");
+        
         socket.on("register",async({userId})=>{
             user[userId]=socket.id
             const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
@@ -17,9 +18,13 @@ const initializeIO= ()=>{
                 }
                 await client.del(`stored-chat-message:${userId}`)
             }
+            console.log("31");
+            
         })
 
         socket.on("create-room",({roomId, username, id, questionId})=>{
+            console.log(30);
+            
             if(rooms[roomId]){
                 return new ApiError(400,"Room already exist")
             }
@@ -29,6 +34,8 @@ const initializeIO= ()=>{
                 users: [],
                 questionId
             }
+            console.log("questionId:",questionId);
+            
             rooms[roomId].users.push({
                 Id: id,
                 username: username
@@ -98,5 +105,5 @@ const initializeIO= ()=>{
     })
 }
 
-export {initializeIO, joinedMyRoom}
+export {initializeIO, joinedMyRoom, rooms}
 

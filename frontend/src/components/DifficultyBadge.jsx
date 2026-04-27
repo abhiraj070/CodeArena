@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils.js";
 
 export function DifficultyBadge({ difficulty, className }) {
   const value = difficulty?.toLowerCase();
+  const label = value ? value.charAt(0).toUpperCase() + value.slice(1) : difficulty;
   const styles = {
     easy: "text-green-700 bg-green-100",
     medium: "text-yellow-700 bg-yellow-100",
@@ -16,7 +17,7 @@ export function DifficultyBadge({ difficulty, className }) {
         className,
       )}
     >
-      {difficulty}
+      {label}
     </span>
   );
 }

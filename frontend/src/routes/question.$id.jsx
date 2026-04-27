@@ -27,6 +27,7 @@ export default function QuestionPage() {
 
   useEffect(() => {
     if (!roomId) return
+    if (!id || id === "null" || id === "undefined") return
 
     const alertKey = `${id}-${roomId}`
     window.__codeArenaRoomAlerts = window.__codeArenaRoomAlerts || {}
@@ -39,7 +40,23 @@ export default function QuestionPage() {
   useEffect(()=>{
     const fetchQuestion=async ()=>{
       try {
-        const res= await axios.get(`/feature/v1/question/startQues/${id}`)
+
+        if (id && id !== "null" && id !== "undefined") {
+          console.log("19 — treating id as valid", id);
+          
+          const res= await axios.get(`/feature/v1/question/startQues/${id}`)
+          setQuestion( res.data.data.question)
+          return
+        }
+
+        if (!roomId) {
+          return
+        }
+console.log("25");
+
+        const res= await axios.get(`/feature/v1/question/startQuesByRoom/${roomId}`)
+        console.log("got question from roomid");
+        
         setQuestion( res.data.data.question)
       } catch (error) {
         console.error("error while fetching question",error);
@@ -47,7 +64,7 @@ export default function QuestionPage() {
       }
     }
     fetchQuestion()
-  },[])
+  },[id, roomId])
 
   
 
@@ -84,7 +101,7 @@ export default function QuestionPage() {
         </div>
         {roomId && (
           <span className="rounded-md border border-primary/50 bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary sm:text-base">
-            RoomId: {roomId}
+            Arena ID: {roomId}
           </span>
         )}
       </header>

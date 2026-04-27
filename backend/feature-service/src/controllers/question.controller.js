@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Questions } from "../models/question.model.js";
 import { client } from "../redis/redis.js";
+import { rooms } from "../socket/socket.js";
 
 const REDIS_TTL_SECONDS = 60;
 
@@ -77,6 +78,34 @@ const startQuestion= asyncHandler(async (req,res) => {
     .json(new ApiResponse(200,{question},"successfully started a workspace for question"))
 })
 
+const startQuestionFromRoom= asyncHandler(async (req,res) => {
+    console.log("starting to fetch quesiton with roomid");
+    
+    const { roomId } = req.params
+    if(!roomId){
+        throw new ApiError(400, "Room id is required")
+    }
+    //console.log(roomId);
+    
+    const room = rooms[roomId]
+    if(!room?.questionId){
+        throw new ApiError(404, "Room not found")
+    }
+    console.log("19");
+    
+    const question = await Questions.findById(room.questionId)
+    console.log(question);
+    
+    if(!question){
+        throw new ApiError(404, "Question not found")
+    }
+    console.log("fetched question");
+    
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { question }, "successfully fetched question for room"))
+})
+
 const storeAQuestion= asyncHandler(async (req, res) => {
     console.log(1);
     
@@ -119,4 +148,4 @@ const getNewlyCreatedQuestion= asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, question, "Latest question fetched successfully"))
 })
 
-export {startQuestion, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}
+export {startQuestion, startQuestionFromRoom, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}
