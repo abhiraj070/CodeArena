@@ -33,21 +33,8 @@ export default function AuthPage() {
   const [feedback, setFeedback] = useState({ type: "", text: "" });
   const [profilePreview, setProfilePreview] = useState("");
   const {setUser, user}= useUser()
-  const {socket}= useSocket()
+  const socket = useSocket();
   
-
-
-  // SOCKET
-  useEffect(()=>{
-    socket.on("connect",()=>{
-      console.log("socket connected from the client side");
-    })
-    return ()=> socket.off("connect")
-
-  },[socket])
-
-
-
 
 
   // SIGNUP
@@ -98,6 +85,8 @@ export default function AuthPage() {
         socket.once("connect",()=>{
           socket.emit("register",{userId: signeduser._id})
         })
+        console.log("socket connected");
+        
       }
       setLoginForm({
         email: signupForm.email.trim(),
@@ -168,10 +157,16 @@ export default function AuthPage() {
       if (loggeduser) {
         localStorage.setItem("user", JSON.stringify(loggeduser));
         setUser(loggeduser);
+        console.log("20");
+        
         socket.connect()
+        console.log("21");
+        
         socket.once("connect",()=>{
           socket.emit("register",{userId:loggeduser._id})
         })
+        console.log("socket connected");
+        
       }
 
       navigate("/", { replace: true });

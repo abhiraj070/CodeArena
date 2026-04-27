@@ -8,17 +8,17 @@ dbconnect()
 .then(
     async ()=>{
         await connectRedis()
-        server.listen(process.env.PORT,()=>{
+        try {
+            initializeIO();
+            console.log("Socket Initialized");
+        } catch (error) {
+            console.log("error while initializing socket:",error);
+            throw error
+        }
+        
+        server.listen(process.env.PORT, ()=>{
             console.log("server started on port",process.env.PORT);
         })
-        try {
-                initializeIO();
-                console.log("Socket Initilised");
-                
-            } catch (error) {
-                console.log("error while initializing socket:",error);
-                return new ApiError(500, "Error while initializing socket")
-            }
     }
 )
 .catch((error)=>{

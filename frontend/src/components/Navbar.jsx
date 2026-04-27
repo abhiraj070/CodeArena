@@ -1,5 +1,5 @@
-import { MessageSquare, User as UserIcon, LogOut, Settings, Plus } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { MessageSquare, User as UserIcon, LogOut, Plus } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -11,34 +11,33 @@ import {
 } from "@/components/ui/dropdown-menu.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
+import { Input } from "@/components/ui/input.jsx";
 import { AddQuestionDialog } from "@/components/AddQuestionDialog.jsx";
-import { JoinRoomDialog } from "@/components/JoinRoomDialog.jsx";
 import { useUser } from "@/context/user.context.jsx";
 import { useSocket } from "@/context/socket.context";
 
 export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const [addQuestionOpen, setAddQuestionOpen] = useState(false);
-  const [joinRoomOpen, setJoinRoomOpen] = useState(false);
   const [roomIdInput, setRoomIdInput] = useState("");
   const {user, setUser}= useUser()
+  const navigate = useNavigate();
   const displayName = user?.fullName || "User";
   const username = user?.username || displayName;
   const avatarFallback = displayName.slice(0, 2).toUpperCase();
-  const {socket}= useSocket()
+  const socket = useSocket();
   
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
     socket.disconnect()
-    window.location.assign("/auth");
+    console.log("socket disconnected");
+    
+    navigate("/auth");
   };
 
-  const handleJoinRoomClick = () => {
-    setJoinRoomOpen(true)
-  }
-
-  const handleJoinRoomEnter = () => {
+  const handleJoinRoomSubmit = (e) => {
+    e.preventDefault();
     const roomId = roomIdInput.trim()
     if (!roomId) return
 
@@ -47,8 +46,8 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
       username,
       id: user?._id,
     })
-    setJoinRoomOpen(false)
     setRoomIdInput("")
+    navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
   }
 
   return (
@@ -75,14 +74,23 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
             <Plus className="h-4 w-4" /> Add question
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700"
-            onClick={handleJoinRoomClick}
-          >
-            Join Room
-          </Button>
+          <form onSubmit={handleJoinRoomSubmit} className="flex items-center gap-2">
+            <Input
+              value={roomIdInput}
+              onChange={(e) => setRoomIdInput(e.target.value)}
+              placeholder="Enter room ID"
+              className="h-9 w-36 md:w-48"
+              aria-label="Room ID"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              type="submit"
+              className="border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700"
+            >
+              Join Room
+            </Button>
+          </form>
 
           <Button
             variant="ghost"
@@ -133,14 +141,6 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
         open={addQuestionOpen}
         onClose={() => setAddQuestionOpen(false)}
         onSubmit={()=> {setAddQuestionOpen(false),setQuestionAdded(!questionAdded)}}
-      />
-
-      <JoinRoomDialog
-        open={joinRoomOpen}
-        onOpenChange={setJoinRoomOpen}
-        roomId={roomIdInput}
-        onRoomIdChange={setRoomIdInput}
-        onEnter={handleJoinRoomEnter}
       />
     </header>
   );

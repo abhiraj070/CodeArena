@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar.jsx";
 import { QuestionContainer } from "@/components/QuestionContainer.jsx";
 import { UserList } from "@/components/UserList.jsx";
 import { InviteDialog } from "@/components/InviteDialog.jsx";
 import { ChatSidebar } from "@/components/ChatSidebar.jsx";
 import { conversations as initialConversations, users } from "@/lib/mock-data.js";
+import { useSocket } from "@/context/socket.context";
 
 export default function IndexPage() {
   const [inviteUser, setInviteUser] = useState(null);
@@ -12,6 +13,21 @@ export default function IndexPage() {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeChatId, setActiveChatId] = useState(null);
   const [questionAdded, setQuestionAdded]= useState(false)
+  const socket = useSocket();
+
+
+
+  // SOCKET
+    useEffect(()=>{
+
+      socket.on("connect",()=>{
+        console.log("socket connected from the client side");
+      })
+      return ()=> socket.off("connect")
+    },[socket])
+
+
+
 
   const handleSendInvite = ({ user, message, code }) => {
     if (!user || !message) return;

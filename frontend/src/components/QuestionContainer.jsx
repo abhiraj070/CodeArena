@@ -18,7 +18,7 @@ export function QuestionContainer({questionAdded}) {
   const [hasMore, setHasMore]= useState(true)
   const [loading, setLoading]= useState(false)
   const [filteredQuestions, setFilteredQuestions]= useState([])
-  const {socket}= useSocket()
+  const socket = useSocket();
   const {user}= useUser()
   const navigate = useNavigate()
 
@@ -149,7 +149,7 @@ export function QuestionContainer({questionAdded}) {
     navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
 
     if (!socket || !user?._id) return
-    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id })
+    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id, questionId  })
 
 
   }

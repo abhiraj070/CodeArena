@@ -19,14 +19,15 @@ const initializeIO= ()=>{
             }
         })
 
-        socket.on("create-room",({roomId, username, id})=>{
+        socket.on("create-room",({roomId, username, id, questionId})=>{
             if(rooms[roomId]){
                 return new ApiError(400,"Room already exist")
             }
             socket.join(roomId)
             rooms[roomId] = {
                 creatorId: id,
-                users: []
+                users: [],
+                questionId
             }
             rooms[roomId].users.push({
                 Id: id,
@@ -40,7 +41,7 @@ const initializeIO= ()=>{
                 return new ApiError(404,"roomId not found")
             }
             socket.join(roomId)
-            rooms[roomId].push({Id: id, username: username})
+            rooms[roomId].users.push({Id: id, username: username})
             const user= await User.findById(id)
             if(!user){
                 return new ApiError(404, "User not found")
@@ -75,7 +76,7 @@ const initializeIO= ()=>{
                 return new ApiError(404,"roomId not found")
             }
             socket.leave(roomId)
-            rooms[roomId]= rooms[roomId].filter((user)=>{
+            rooms[roomId].users = rooms[roomId].users.filter((user)=>{
                 return user.Id!= id
             })
 

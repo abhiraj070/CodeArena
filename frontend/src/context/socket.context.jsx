@@ -5,7 +5,7 @@ const socketContext = createContext(null)
 
 export const SocketProvider = ({ children }) => {
         const socket = useMemo(() => { // since in our model the socketProvider component never unmounts so no cleanup effect run so the socket id for a user remains same but in some cases like network drop or tab close the user gets new socket id on relogin
-        return io("http://localhost:8003", {
+        return io(import.meta.env.VITE_FEATURE_SERVICE_URL || "http://localhost:8000", {
             withCredentials: true,
             autoConnect: false,
         });

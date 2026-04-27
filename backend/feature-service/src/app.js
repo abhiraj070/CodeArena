@@ -7,15 +7,16 @@ import helmet from 'helmet'
 
 const app= express()
 const server= http.createServer(app)
+const corsOrigin = process.env.ORIGIN || "http://localhost:5173"
 const io= new Server(server, {
     cors: {
-        origin: process.env.ORIGIN,
-        credentials: true
-    }
+        origin: corsOrigin,
+        credentials: true,
+    },
 })
 
 app.use(cors({
-    origin: process.env.ORIGIN,
+    origin: corsOrigin,
     credentials: true
 }))
 app.use(helmet()) //helmet protects our app from some well known web vulnerabilities by setting appropriate HTTP headers.
