@@ -32,7 +32,8 @@ const initializeIO= ()=>{
             rooms[roomId] = {
                 creatorId: id,
                 users: [],
-                questionId
+                questionId,
+                code: ""
             }
             console.log("questionId:",questionId);
             

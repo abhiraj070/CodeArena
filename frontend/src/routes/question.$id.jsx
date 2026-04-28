@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
-import { STARTER_CODE, LANGUAGES } from "@/lib/mock-data.js";
+import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
 import { ArrowLeft, Code2, Play, Send } from "lucide-react";
 import axios from "axios";
 

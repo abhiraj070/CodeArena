@@ -4,7 +4,7 @@ import { QuestionContainer } from "@/components/QuestionContainer.jsx";
 import { UserList } from "@/components/UserList.jsx";
 import { InviteDialog } from "@/components/InviteDialog.jsx";
 import { ChatSidebar } from "@/components/ChatSidebar.jsx";
-import { conversations as initialConversations, users } from "@/lib/mock-data.js";
+import { conversations as initialConversations, users } from "@/lib/code-template.js";
 import { useSocket } from "@/context/socket.context";
 
 export default function IndexPage() {

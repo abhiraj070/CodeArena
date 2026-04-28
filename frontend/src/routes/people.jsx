@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Search } from "lucide-react";
-import { conversations as initialConversations } from "@/lib/mock-data.js";
+import { conversations as initialConversations } from "@/lib/code-template.js";
 import { cn } from "@/lib/utils.js";
 import axios from "axios";
 
