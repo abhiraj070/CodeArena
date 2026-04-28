@@ -7,6 +7,7 @@ import { Circle, Search } from "lucide-react";
 import axios from "axios";
 import { useSocket } from "@/context/socket.context";
 import { useUser } from "@/context/user.context";
+import { STARTER_CODE } from "@/lib/code-template";
 
 
 export function QuestionContainer({questionAdded}) {
@@ -147,9 +148,17 @@ export function QuestionContainer({questionAdded}) {
     }
 
     navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
+    console.log("99");
 
-    if (!socket || !user?._id) return
-    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id, questionId  })
+    if (!socket || !user?._id) {
+      console.log("no socket or user");
+      return
+    }
+    
+    const code = STARTER_CODE[user.language] 
+    console.log(98);
+    
+    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id, questionId, code  })
     console.log("arena created");
     
 

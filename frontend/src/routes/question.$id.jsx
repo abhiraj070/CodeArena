@@ -13,6 +13,7 @@ import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
 import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
 import { ArrowLeft, Code2, Play, Send } from "lucide-react";
 import axios from "axios";
+import { useUser } from "@/context/user.context"; 
 
 
 
@@ -21,43 +22,42 @@ export default function QuestionPage() {
   const [question, setQuestion] = useState(null)
   const { id } = useParams();
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState(STARTER_CODE.javascript);
   const [searchParams]= useSearchParams()
   const roomId = searchParams.get("roomId")
+  const {user}= useUser()
+  const [code, setCode] = useState(STARTER_CODE.javascript);
 
-  useEffect(() => {
-    if (!roomId) return
-    if (!id || id === "null" || id === "undefined") return
 
-    const alertKey = `${id}-${roomId}`
-    window.__codeArenaRoomAlerts = window.__codeArenaRoomAlerts || {}
-    if (window.__codeArenaRoomAlerts[alertKey]) return
+  useEffect(()=>{
+    setLanguage(user.language)
+  },[])
 
-    window.__codeArenaRoomAlerts[alertKey] = true
-    window.alert(`Room ID: ${roomId}`)
-  }, [id, roomId])
 
   useEffect(()=>{
     const fetchQuestion=async ()=>{
       try {
-
+        console.log("48");
+        
         if (id && id !== "null" && id !== "undefined") {
           console.log("19 — treating id as valid", id);
           
-          const res= await axios.get(`/feature/v1/question/startQues/${id}`)
+          const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
+          console.log("ques:",res.data.data.question);
+          setCode(res.data.data.code)
           return
         }
 
         if (!roomId) {
           return
         }
-console.log("25");
 
         const res= await axios.get(`/feature/v1/question/startQuesByRoom/${roomId}`)
         console.log("got question from roomid");
+        console.log("ques:",res.data.data.question);
         
         setQuestion( res.data.data.question)
+        setCode(res.data.data.code)
       } catch (error) {
         console.error("error while fetching question",error);
         

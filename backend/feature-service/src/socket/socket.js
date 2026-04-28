@@ -22,8 +22,8 @@ const initializeIO= ()=>{
             
         })
 
-        socket.on("create-room",({roomId, username, id, questionId})=>{
-            console.log(30);
+        socket.on("create-room",({roomId, username, id, questionId, code})=>{
+            console.log("starting the room creation");
             
             if(rooms[roomId]){
                 return new ApiError(400,"Room already exist")
@@ -33,7 +33,7 @@ const initializeIO= ()=>{
                 creatorId: id,
                 users: [],
                 questionId,
-                code: ""
+                code
             }
             console.log("questionId:",questionId);
             

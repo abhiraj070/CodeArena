@@ -56,6 +56,25 @@ const getAllQuestion= asyncHandler(async (req,res) => {
 const startQuestion= asyncHandler(async (req,res) => {
     const ques_id = req.params?.ques_id
     const user= req.user
+    const { roomId } = req.params
+    console.log("38");
+    
+    if(!roomId){
+        console.log("40");
+        throw new ApiError(400, "Room id is required")
+    }
+    //console.log(roomId);
+    console.log("35");
+    const room = rooms[roomId]
+    
+    if(!room){
+        throw new ApiError(404, "Room not found")
+    }
+    console.log("code:",room.code);
+    
+    if(!room.code){
+        throw new ApiError(400, "code is unavailable")
+    }
     if(!user){
         throw new ApiError(401, "Unauthorized request")
     }
@@ -73,9 +92,10 @@ const startQuestion= asyncHandler(async (req,res) => {
         throw new ApiError(404, "Question not found")
     }
     await client.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", REDIS_TTL_SECONDS)
+    
     return res
     .status(200)
-    .json(new ApiResponse(200,{question},"successfully started a workspace for question"))
+    .json(new ApiResponse(200,{question, code: room.code},"successfully started a workspace for question"))
 })
 
 const startQuestionFromRoom= asyncHandler(async (req,res) => {
@@ -91,7 +111,10 @@ const startQuestionFromRoom= asyncHandler(async (req,res) => {
     if(!room?.questionId){
         throw new ApiError(404, "Room not found")
     }
-    console.log("19");
+    if(!room?.code || room.code==""){
+        throw new ApiError(400, "code is unavailable")
+    }
+    //console.log("19");
     
     const question = await Questions.findById(room.questionId)
     console.log(question);
@@ -103,7 +126,7 @@ const startQuestionFromRoom= asyncHandler(async (req,res) => {
     
     return res
     .status(200)
-    .json(new ApiResponse(200, { question }, "successfully fetched question for room"))
+    .json(new ApiResponse(200, { question, code: room.code }, "successfully fetched question for room"))
 })
 
 const storeAQuestion= asyncHandler(async (req, res) => {

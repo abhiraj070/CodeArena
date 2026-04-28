@@ -7,7 +7,7 @@ import { ChatSidebar } from "@/components/ChatSidebar.jsx";
 import { conversations as initialConversations, users } from "@/lib/code-template.js";
 import { useSocket } from "@/context/socket.context";
 
-export default function IndexPage() {
+export default function IndexPage({code}) {
   const [inviteUser, setInviteUser] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [conversations, setConversations] = useState(initialConversations);
@@ -80,7 +80,7 @@ export default function IndexPage() {
         />
 
       <main className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[1fr_320px]">
-        <QuestionContainer questionAdded={questionAdded}/>
+        <QuestionContainer questionAdded={questionAdded} code={code}/>
         <aside className="space-y-4">
           <UserList users={users} onInvite={setInviteUser} />
         </aside>

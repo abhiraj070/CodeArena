@@ -7,6 +7,7 @@ import QuestionPage from "./routes/question.$id.jsx";
 import NotFoundPage from "./routes/NotFound.jsx";
 import { useUser } from "./context/user.context.jsx";
 
+
 export default function App() {
   const { user } = useUser();
   const isAuthenticated = Boolean(user);
