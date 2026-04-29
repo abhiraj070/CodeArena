@@ -103,6 +103,10 @@ const initializeIO= ()=>{
                 await client.lpush(`stored-chat-message:${recever_id}`,JSON.stringify({message, senderId}))
             }
         })
+
+        socket.on("yjs-update",({update,roomId})=>{
+            io.to(`${roomId}`).emit("yjs-update-receive",update)
+        })
     })
 }
 

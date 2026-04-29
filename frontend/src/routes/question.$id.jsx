@@ -1,5 +1,5 @@
 import { Link, useSearchParams, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button.jsx";
 import {
@@ -14,7 +14,10 @@ import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
 import { ArrowLeft, Code2, Play, Send } from "lucide-react";
 import axios from "axios";
 import { useUser } from "@/context/user.context"; 
-
+import { MonacoBinding } from "y-monaco";
+import * as Y from "yjs";
+import { createYjsDoc } from "@/Yjs/yjs";
+import { useSocket } from "@/context/socket.context";
 
 
 export default function QuestionPage() {
@@ -25,13 +28,28 @@ export default function QuestionPage() {
   const [searchParams]= useSearchParams()
   const roomId = searchParams.get("roomId")
   const {user}= useUser()
+  const socket = useSocket()
   const [code, setCode] = useState(STARTER_CODE.javascript);
+  const ydocRef= useRef(null)
+  const bindingRef= useRef(null)
+
+
 
 
   useEffect(()=>{
     setLanguage(user.language)
   },[])
 
+  const onLanguageChange = (val) => {
+    const lang = val;
+    setLanguage(lang);
+    setCode(STARTER_CODE[lang]);
+  };
+
+
+
+
+  // YJS
 
   useEffect(()=>{
     const fetchQuestion=async ()=>{
@@ -67,6 +85,70 @@ export default function QuestionPage() {
   },[id, roomId])
 
   
+  if(!ydocRef.current){
+    const {ydoc, yText}=createYjsDoc()
+    ydocRef.current= {ydoc,yText}
+  }
+
+  const {ydoc, yText}= ydocRef.current
+
+  useEffect(() => {
+    if (!roomId) return
+
+    socket.connect()
+    const handleRemoteUpdate = (update) => {
+      Y.applyUpdate(ydoc, update, "remote")
+    }
+
+    socket.on("yjs-update-receive", handleRemoteUpdate)
+
+    return () => {
+      socket.off("yjs-update-receive", handleRemoteUpdate)
+    }
+  }, [roomId, socket, ydoc])
+
+  useEffect(() => {
+    if (!roomId) return
+
+    const handleLocalUpdate = (update, origin) => { //yjs gives a origin sting which tells whether the change is local or from other user(remote). so if the change is fomrother user do not emit it back.
+      if (origin === "remote") return
+      socket.emit("yjs-update", { update, roomId })
+    }
+    //the origin thing is done because suppose form user B yjs/ydoc emits a update change and user A recives it and then applychanges, so technically yjs is updated again and can emit update again but using origin this could be stoped.
+
+    ydoc.on("update", handleLocalUpdate)
+    return () => {
+      ydoc.off("update", handleLocalUpdate)
+    }
+  }, [roomId, socket, ydoc])
+
+  useEffect(() => {
+    if (!code) return
+    if (yText.toString().length === 0) {
+      yText.insert(0, code)
+    }
+  }, [code, yText])
+
+  const handleEditorDidMount= (editor)=>{
+    bindingRef.current = new MonacoBinding( 
+      yText,
+      editor.getModel(),
+      new Set([editor]),
+      null 
+    );
+  }
+
+  useEffect(() => {
+    return () => {
+      bindingRef.current?.destroy()
+    }
+  }, [])
+
+
+
+
+
+   
 
   if (!question) {
     return (
@@ -75,12 +157,6 @@ export default function QuestionPage() {
       </div>
     )
   }
-
-  const onLanguageChange = (val) => {
-    const lang = val;
-    setLanguage(lang);
-    setCode(STARTER_CODE[lang]);
-  };
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -173,10 +249,9 @@ export default function QuestionPage() {
               width="100%"
               language={language}
               theme="vs-dark"
-              value={code}
-              onChange={(value) => setCode(value ?? "")}
               path={`main.${extFor(language)}`}
               options={editorOptions}
+              onMount={handleEditorDidMount}
             />
           </div>
 
