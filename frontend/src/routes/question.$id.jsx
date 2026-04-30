@@ -30,6 +30,26 @@ import * as Y from "yjs";
 import { createYjsDoc } from "@/Yjs/yjs";
 import { useSocket } from "@/context/socket.context";
 
+function normalizeYjsUpdate(update) {
+  if (update instanceof Uint8Array) {
+    return update
+  }
+
+  if (update instanceof ArrayBuffer) {
+    return new Uint8Array(update)
+  }
+
+  if (Array.isArray(update)) {
+    return Uint8Array.from(update)
+  }
+
+  if (update?.type === "Buffer" && Array.isArray(update.data)) {
+    return Uint8Array.from(update.data)
+  }
+
+  return null
+}
+
 
 export default function QuestionPage() {
 
@@ -59,6 +79,17 @@ export default function QuestionPage() {
       setCode(STARTER_CODE[lang]);
   };
 
+
+  useEffect(()=>{
+    console.log("here");
+    if (!socket || !roomId || !user._id) return
+    console.log("here3");
+    socket.connect()
+    socket.once("connect",()=>{
+      socket.emit("join-room",{roomId, username: user.username, id: user._id})
+    })
+    console.log("here3");
+  },[socket])
 
 
 
@@ -109,9 +140,23 @@ export default function QuestionPage() {
 
   useEffect(() => {
     if (!roomId) return
-    socket.on("yjs-update-receive", Y.applyUpdate(ydoc, update, "remote"))
+    const handleUpdate = (update) => {
+      const normalizedUpdate = normalizeYjsUpdate(update)
+
+      if (!normalizedUpdate || normalizedUpdate.length === 0) {
+        console.warn("Ignoring invalid Yjs update payload", update)
+        return
+      }
+
+      try {
+        Y.applyUpdate(ydoc, normalizedUpdate, "remote")
+      } catch (error) {
+        console.error("Failed to apply remote Yjs update", error, update)
+      }
+    }
+    socket.on("yjs-update-receive",handleUpdate)
     return () => {
-      socket.off("yjs-update-receive", Y.applyUpdate(ydoc, update, "remote"))
+      socket.off("yjs-update-receive",handleUpdate)
     }
   }, [roomId, socket, ydoc])
 

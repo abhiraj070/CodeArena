@@ -3,7 +3,28 @@ import {io} from "../app.js"
 import { User } from "../models/user.model.js"
 import { client } from "../redis/redis.js"
 
-const rooms={},joinedMyRoom={},user={}
+const rooms={},joinedMyRoom={},user={},socketToUser={}
+
+function normalizeYjsUpdate(update) {
+    if (update instanceof Uint8Array) {
+        return update
+    }
+
+    if (update instanceof ArrayBuffer) {
+        return new Uint8Array(update)
+    }
+
+    if (Array.isArray(update)) {
+        return Uint8Array.from(update)
+    }
+
+    if (update?.type === "Buffer" && Array.isArray(update.data)) {
+        return Uint8Array.from(update.data)
+    }
+
+    return null
+}
+
 const initializeIO= ()=>{
     io.on("connection",(socket)=>{
         //console.log("32");
@@ -31,6 +52,7 @@ const initializeIO= ()=>{
                 return
             }
             socket.join(roomId)
+            socketToUser[socket.id] = { id, username, roomId }
             rooms[roomId] = {
                 creatorId: id,
                 users: [],
@@ -53,8 +75,15 @@ const initializeIO= ()=>{
                 callback?.({ ok: false, error: "roomId not found" })
                 return
             }
+            console.log("users");
+
             socket.join(roomId)
+            socketToUser[socket.id] = { id, username, roomId }
             rooms[roomId].users.push({Id: id, username: username})
+            for(const users of rooms[roomId].users){
+                console.log(users);
+     
+            }
             const creatorId = rooms[roomId].creatorId
 
             const [userUpdate, creatorUpdate] = await Promise.all([
@@ -97,9 +126,48 @@ const initializeIO= ()=>{
 
         })
         //disconnect connection
-        socket.on("disconnect",(reason,)=>{
+        socket.on("disconnect",(reason)=>{
             console.log("disconnected: ",reason);
             
+            const userInfo = socketToUser[socket.id]
+            if (userInfo) {
+                const { id, username, roomId } = userInfo
+                
+                // Remove user from the room
+                if (rooms[roomId]) {
+                    rooms[roomId].users = rooms[roomId].users.filter((user) => user.Id !== id)
+                    console.log(`User ${username} removed from room ${roomId}`)
+                    
+                    // If no users left in room, delete the room
+                    if (rooms[roomId].users.length === 0) {
+                        delete rooms[roomId]
+                        console.log(`Room ${roomId} deleted (no users left)`)
+                    } else {
+                        // Notify remaining users that someone left
+                        io.to(roomId).emit("user_left", username)
+                    }
+                }
+                
+                // Remove from socket tracking
+                delete socketToUser[socket.id]
+            }
+            
+            // Remove from user tracking
+            for (const userId in user) {
+                if (user[userId] === socket.id) {
+                    delete user[userId]
+                    break
+                }
+            }
+        })
+
+        socket.on("disconnecting",()=>{
+            //console.log("rooms:");
+            
+            // for (const roomId of socket.rooms) { //when a socket is created it adds itself in socket.rooms.and "disconnecting" can give us this socket.rooms
+            //     console.log(roomId);
+                
+            // }
         })
 
         socket.on("in-chat-message",async({message,recever_id,senderId})=>{
@@ -112,12 +180,19 @@ const initializeIO= ()=>{
         })
 
         socket.on("yjs-update",({update,roomId, fullText})=>{
+            const normalizedUpdate = normalizeYjsUpdate(update)
+
+            if (!normalizedUpdate || normalizedUpdate.length === 0) {
+                console.warn("Ignoring invalid Yjs update from socket", update)
+                return
+            }
+
             if (rooms[roomId] && typeof fullText === "string") {
                 rooms[roomId].code = fullText
                 console.log("code updated");
                 
             }
-            io.to(`${roomId}`).emit("yjs-update-receive",update)
+            io.to(`${roomId}`).emit("yjs-update-receive",normalizedUpdate)
         })
 
     })

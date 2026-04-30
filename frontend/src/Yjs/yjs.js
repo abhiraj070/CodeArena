@@ -4,7 +4,7 @@ import * as Y from "yjs" //Yjs is a CRDT-based (Conflict-free Replicated Data Ty
 
 export function createYjsDoc(){ //this is a factory function which creates a new object everytime
     const ydoc= new Y.Doc()  //imagine this as the whole docs file. this is kept uniques for every user. so that changes can be synced
-    const yText= ydoc.getText("Monaco") // ad this as the text inside it
+    const yText= ydoc.getText("editor") // ad this as the text inside it
 
     return { ydoc, yText };
 
