@@ -147,19 +147,35 @@ export function QuestionContainer({questionAdded}) {
       roomId += "-"
     }
 
-    navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
-    console.log("99");
-
     if (!socket || !user?._id) {
       console.log("no socket or user");
       return
     }
     
     const code = STARTER_CODE[user.language] 
-    console.log(98);
+    //console.log(98);
     
-    socket.emit("create-room", { roomId, userame: `${user.userame}`, id: user._id, questionId, code  })
-    console.log("arena created");
+    const emitCreateRoom = () => {
+      socket.emit(
+        "create-room",
+        { roomId, username: `${user.username}`, id: user._id, questionId, code },
+        (ack) => {
+          if (!ack?.ok) {
+            console.error("Failed to create room", ack?.error)
+            return
+          }
+          navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
+          console.log("arena created")
+        }
+      )
+    }
+
+    if (!socket.connected) {
+      socket.connect()
+      socket.once("connect", emitCreateRoom)
+    } else {
+      emitCreateRoom()
+    }
     
 
   }

@@ -6,7 +6,8 @@ import { client } from "../redis/redis.js"
 const rooms={},joinedMyRoom={},user={}
 const initializeIO= ()=>{
     io.on("connection",(socket)=>{
-        console.log("32");
+        //console.log("32");
+        console.log("user connected to socket form Backend");
         
         socket.on("register",async({userId})=>{
             user[userId]=socket.id
@@ -22,11 +23,12 @@ const initializeIO= ()=>{
             
         })
 
-        socket.on("create-room",({roomId, username, id, questionId, code})=>{
+        socket.on("create-room",({roomId, username, id, questionId, code}, callback)=>{
             console.log("starting the room creation");
             
             if(rooms[roomId]){
-                return new ApiError(400,"Room already exist")
+                callback?.({ ok: false, error: "Room already exist" })
+                return
             }
             socket.join(roomId)
             rooms[roomId] = {
@@ -41,34 +43,39 @@ const initializeIO= ()=>{
                 Id: id,
                 username: username
             })
-            socket.emit("room created",roomId)
+            callback?.({ ok: true })
         })
 
-        socket.on("join-room",async({roomId, username, id})=>{ // when the execution flow reaches here it means that the user has already joined the room.
+        socket.on("join-room",async({roomId, username, id}, callback)=>{ // when the execution flow reaches here it means that the user has already joined the room.
+            console.log(`${username} joining room`);
+            
             if(!rooms[roomId]){
-                return new ApiError(404,"roomId not found")
+                callback?.({ ok: false, error: "roomId not found" })
+                return
             }
             socket.join(roomId)
             rooms[roomId].users.push({Id: id, username: username})
-            const user= await User.findById(id)
-            if(!user){
-                return new ApiError(404, "User not found")
+            const creatorId = rooms[roomId].creatorId
+
+            const [userUpdate, creatorUpdate] = await Promise.all([
+                User.updateOne(
+                    { _id: id },
+                    { $push: { recentlyConnectedWith: { $each: [creatorId], $slice: -10 } } }
+                ),
+                User.updateOne(
+                    { _id: creatorId },
+                    { $push: { recentlyConnectedWith: { $each: [id], $slice: -10 } } }
+                )
+            ])
+
+            if(userUpdate.matchedCount === 0 || creatorUpdate.matchedCount === 0){
+                callback?.({ ok: false, error: "User not found" })
+                return
             }
-            if(user.recentlyConnectedWith.length>=10){
-                user.recentlyConnectedWith.splice(0,1)
-            }
-            user.recentlyConnectedWith.push(rooms[roomId].creatorId) 
-            await user.save()
-            const creater= await User.findById(rooms[roomId].creatorId)
-            if(!creater){
-                return new ApiError(404, "User not found")
-            }
-            if(creater.recentlyConnectedWith.length>=10){
-                creater.recentlyConnectedWith.splice(0,1)
-            }
-            creater.recentlyConnectedWith.push(id)
-            await creater.save()
             socket.to(roomId).emit("user_joined",`${username}`)
+            console.log(`user ${username} joined roomId ${roomId}`);
+            callback?.({ ok: true })
+            
         })
 
         //send message to room
@@ -104,9 +111,15 @@ const initializeIO= ()=>{
             }
         })
 
-        socket.on("yjs-update",({update,roomId})=>{
+        socket.on("yjs-update",({update,roomId, fullText})=>{
+            if (rooms[roomId] && typeof fullText === "string") {
+                rooms[roomId].code = fullText
+                console.log("code updated");
+                
+            }
             io.to(`${roomId}`).emit("yjs-update-receive",update)
         })
+
     })
 }
 

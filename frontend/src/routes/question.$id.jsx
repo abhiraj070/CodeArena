@@ -1,3 +1,13 @@
+
+//Whole flow for the code sync
+// User types in the editor. Monaco updates its model.
+// MonacoBinding writes the change into yText (inside ydoc).
+// ydoc emits an "update" event with origin undefined (local).
+// handleLocalUpdate checks origin and emits socket.emit("yjs-update", { update, roomId, fullText }).
+// Server broadcasts to other socket(s) in the room.
+// The other client receives "yjs-update-receive" → handleRemoteUpdate.
+// handleRemoteUpdate normalizes the payload and runs Y.applyUpdate(ydoc,
+
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import Editor from "@monaco-editor/react";
@@ -11,11 +21,12 @@ import {
 } from "@/components/ui/select.jsx";
 import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
 import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
-import { ArrowLeft, Code2, Play, Send } from "lucide-react";
+import { ArrowLeft, Code2, Copy, Play, Send } from "lucide-react";
 import axios from "axios";
 import { useUser } from "@/context/user.context"; 
-import { MonacoBinding } from "y-monaco";
+import { MonacoBinding } from "y-monaco"; //binds yjs and monaco
 import * as Y from "yjs";
+//import { WebsocketProvider } from "y-websocket"; // it helps sync our yjs document over websocket, automatically(without us writing socket.on() etc). it basiclly connects our yjs docs to the websocket server and handles sending and reciving automatically.
 import { createYjsDoc } from "@/Yjs/yjs";
 import { useSocket } from "@/context/socket.context";
 
@@ -29,11 +40,12 @@ export default function QuestionPage() {
   const roomId = searchParams.get("roomId")
   const {user}= useUser()
   const socket = useSocket()
-  const [code, setCode] = useState(STARTER_CODE.javascript);
+  const [code, setCode] = useState("");
+  const [copied, setCopied] = useState(false)
   const ydocRef= useRef(null)
   const bindingRef= useRef(null)
-
-
+  const copyTimeoutRef= useRef(null)
+  const hydrationRef = useRef(false)
 
 
   useEffect(()=>{
@@ -43,7 +55,8 @@ export default function QuestionPage() {
   const onLanguageChange = (val) => {
     const lang = val;
     setLanguage(lang);
-    setCode(STARTER_CODE[lang]);
+      //console.log(99);
+      setCode(STARTER_CODE[lang]);
   };
 
 
@@ -54,14 +67,13 @@ export default function QuestionPage() {
   useEffect(()=>{
     const fetchQuestion=async ()=>{
       try {
-        console.log("48");
         
         if (id && id !== "null" && id !== "undefined") {
-          console.log("19 — treating id as valid", id);
-          
+          //console.log("19 — treating id as valid", id);
           const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
+          hydrationRef.current = true
           setCode(res.data.data.code)
           return
         }
@@ -69,13 +81,16 @@ export default function QuestionPage() {
         if (!roomId) {
           return
         }
-
-        const res= await axios.get(`/feature/v1/question/startQuesByRoom/${roomId}`)
-        console.log("got question from roomid");
-        console.log("ques:",res.data.data.question);
+        console.log("code sync and question featch start");
         
+        const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
+        //console.log("got question from roomid");
+        //console.log("ques:",res.data.data.question);
         setQuestion( res.data.data.question)
+        hydrationRef.current = true
         setCode(res.data.data.code)
+        console.log("code synced");
+        
       } catch (error) {
         console.error("error while fetching question",error);
         
@@ -85,7 +100,7 @@ export default function QuestionPage() {
   },[id, roomId])
 
   
-  if(!ydocRef.current){
+  if(!ydocRef.current){ //ydocRef pura yjs document hai jisme 2 chize hoti hai ydoc and ytext. ydoc is unique per user.
     const {ydoc, yText}=createYjsDoc()
     ydocRef.current= {ydoc,yText}
   }
@@ -94,28 +109,20 @@ export default function QuestionPage() {
 
   useEffect(() => {
     if (!roomId) return
-
-    socket.connect()
-    const handleRemoteUpdate = (update) => {
-      Y.applyUpdate(ydoc, update, "remote")
-    }
-
-    socket.on("yjs-update-receive", handleRemoteUpdate)
-
+    socket.on("yjs-update-receive", Y.applyUpdate(ydoc, update, "remote"))
     return () => {
-      socket.off("yjs-update-receive", handleRemoteUpdate)
+      socket.off("yjs-update-receive", Y.applyUpdate(ydoc, update, "remote"))
     }
   }, [roomId, socket, ydoc])
 
+
   useEffect(() => {
     if (!roomId) return
-
-    const handleLocalUpdate = (update, origin) => { //yjs gives a origin sting which tells whether the change is local or from other user(remote). so if the change is fomrother user do not emit it back.
-      if (origin === "remote") return
-      socket.emit("yjs-update", { update, roomId })
+    const handleLocalUpdate = (update, origin) => { //yjs gives a origin string which tells whether the change is local or from other user(remote). so if the change is fomrother user do not emit it back.
+      if (origin === "remote" || origin === "hydrate") return
+      socket.emit("yjs-update", { update, roomId, fullText: yText.toString() })
     }
-    //the origin thing is done because suppose form user B yjs/ydoc emits a update change and user A recives it and then applychanges, so technically yjs is updated again and can emit update again but using origin this could be stoped.
-
+    //the origin thing is done because suppose form user B yjs/ydoc emits a update change and user A recives it and then applychanges, so technically yjs is updated again and can emit update again but using origin this could be stoped
     ydoc.on("update", handleLocalUpdate)
     return () => {
       ydoc.off("update", handleLocalUpdate)
@@ -123,27 +130,100 @@ export default function QuestionPage() {
   }, [roomId, socket, ydoc])
 
   useEffect(() => {
-    if (!code) return
-    if (yText.toString().length === 0) {
+    if (code === undefined || code === null) return
+
+    const isHydrating = hydrationRef.current
+
+    const applyCode = () => { //.transact helps many changes in the y.text to wrap in one and send. this helps in many things including network traffic
+      if (yText.length > 0) {
+        yText.delete(0, yText.length)
+      }
       yText.insert(0, code)
     }
-  }, [code, yText])
+
+    if (isHydrating) {
+      ydoc.transact(applyCode, "hydrate")
+      hydrationRef.current = false
+    } else {
+      ydoc.transact(applyCode)
+    }
+  }, [code, ydoc, yText])
 
   const handleEditorDidMount= (editor)=>{
     bindingRef.current = new MonacoBinding( 
       yText,
       editor.getModel(),
       new Set([editor]),
-      null 
+      null
     );
   }
 
   useEffect(() => {
     return () => {
       bindingRef.current?.destroy()
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current)
+      }
     }
   }, [])
 
+
+  // useEffect(()=>{
+  //   if(!roomId || !ydocRef.current) return
+
+  //     const provider= new WebsocketProvider(// this provider will act as the mediator between the yjs and the websocket server
+  //       import.meta.env.VITE_WEBSOCKET_URL,
+  //       roomId,
+  //       ydocRef.current.ydoc
+  //     )
+
+  //     providerRef.current= provider    
+  //     return ()=>{
+  //       provider.destroy()
+  //     }
+  // },[roomId, ydocRef.current])
+
+  //flow
+  //   Editor → yText → ydoc
+  //       ↓
+  //   WebsocketProvider
+  //         ↓
+  //   WebSocket server
+  //         ↓
+  //   Other clients
+
+
+
+
+  //COPY
+
+  const handleCopyArenaId = async () => {
+    if (!roomId) return
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(roomId)
+      } else {
+        const textarea = document.createElement("textarea")
+        textarea.value = roomId
+        textarea.setAttribute("readonly", "")
+        textarea.style.position = "absolute"
+        textarea.style.left = "-9999px"
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand("copy")
+        textarea.remove()
+      }
+
+      setCopied(true)
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 1600)
+    } catch (error) {
+      console.error("Failed to copy arena ID", error)
+    }
+  }
 
 
 
@@ -176,9 +256,20 @@ export default function QuestionPage() {
           <DifficultyBadge difficulty={question.difficulty} />
         </div>
         {roomId && (
-          <span className="rounded-md border border-primary/50 bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary sm:text-base">
-            Arena ID: {roomId}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md border border-primary/50 bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary sm:text-base">
+              Arena ID: {roomId}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCopyArenaId}
+              className="h-8 gap-1.5 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
         )}
       </header>
 
@@ -238,9 +329,6 @@ export default function QuestionPage() {
                 ))}
               </SelectContent>
             </Select>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              main.{extFor(language)}
-            </span>
           </div>
 
           <div className="flex-1">
@@ -249,7 +337,7 @@ export default function QuestionPage() {
               width="100%"
               language={language}
               theme="vs-dark"
-              path={`main.${extFor(language)}`}
+              path="main"
               options={editorOptions}
               onMount={handleEditorDidMount}
             />

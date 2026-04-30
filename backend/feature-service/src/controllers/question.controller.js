@@ -20,7 +20,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
     if(cursor==null){
         const cachedValue= await client.get("startingQuestions")
         const startCursor= await client.get("startCursor")
-        console.log(13);
+        //console.log(13);
         
         if(cachedValue){
             return res
@@ -28,7 +28,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
             .json(new ApiResponse(200,{questions: JSON.parse(cachedValue), nextCursor: JSON.parse(startCursor)},"successfully fetched limit number of questions from redis"))
         }
     }
-    console.log(14);
+    //console.log(14);
     
     const query= cursor && mongoose.Types.ObjectId.isValid(cursor)? {_id:{$lt: new mongoose.Types.ObjectId(cursor)}} : {}
     //console.log(query);
@@ -57,20 +57,20 @@ const startQuestion= asyncHandler(async (req,res) => {
     const ques_id = req.params?.ques_id
     const user= req.user
     const { roomId } = req.params
-    console.log("38");
+    //console.log("38");
     
     if(!roomId){
-        console.log("40");
+        //console.log("40");
         throw new ApiError(400, "Room id is required")
     }
     //console.log(roomId);
-    console.log("35");
+    //console.log("35");
     const room = rooms[roomId]
     
     if(!room){
         throw new ApiError(404, "Room not found")
     }
-    console.log("code:",room.code);
+    //console.log("code:",room.code);
     
     if(!room.code){
         throw new ApiError(400, "code is unavailable")
@@ -85,7 +85,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(cachedValue){
         return res
         .status(200)
-        .json(new ApiResponse(200,{question: JSON.parse(cachedValue)},"successfully started a workspace for question"))
+        .json(new ApiResponse(200,{question: JSON.parse(cachedValue), code: room.code},"successfully started a workspace for question"))
     }
     const question= await Questions.findById(ques_id)
     if(!question){
@@ -117,7 +117,7 @@ const startQuestionFromRoom= asyncHandler(async (req,res) => {
     //console.log("19");
     
     const question = await Questions.findById(room.questionId)
-    console.log(question);
+    //console.log(question);
     
     if(!question){
         throw new ApiError(404, "Question not found")
@@ -129,8 +129,35 @@ const startQuestionFromRoom= asyncHandler(async (req,res) => {
     .json(new ApiResponse(200, { question, code: room.code }, "successfully fetched question for room"))
 })
 
+const startQuestionFromRoomAndId = asyncHandler(async (req, res) => {
+    const { roomId } = req.params
+    if (!roomId) {
+        throw new ApiError(400, "Room id is required")
+    }
+    const room = rooms[roomId]
+    if (!room) {
+        throw new ApiError(404, "Room not found")
+    }
+    if (!room?.code || room.code === "") {
+        throw new ApiError(400, "code is unavailable")
+    }
+    const ques_id= room.questionId
+    if (!ques_id) {
+        throw new ApiError(400, "Question id is required")
+    }
+
+    const question = await Questions.findById(ques_id)
+    if (!question) {
+        throw new ApiError(404, "Question not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { question, code: room.code }, "successfully fetched question for room"))
+})
+
 const storeAQuestion= asyncHandler(async (req, res) => {
-    console.log(1);
+    //console.log(1);
     
     const {description, difficulty, returnType, title}= req.body
     const {hiddenTestCases, visibleTestCases}= req
@@ -139,7 +166,7 @@ const storeAQuestion= asyncHandler(async (req, res) => {
     if(!description || !difficulty || !returnType || !hiddenTestCases || !visibleTestCases ||!title){
         throw new ApiError(401,"all fields are required")
     }
-    console.log(5);
+    //console.log(5);
     
     const questionCreated= await Questions.create({
         title,
@@ -149,12 +176,12 @@ const storeAQuestion= asyncHandler(async (req, res) => {
         hiddenTestCases,
         visibleTestCases
     })
-    console.log(4);
+    //console.log(4);
     
     if(!questionCreated){
         throw new ApiError(500,"Error while storeing the question")
     }
-    console.log(3);
+    //console.log(3);
     
     return res
     .status(200)
@@ -171,4 +198,4 @@ const getNewlyCreatedQuestion= asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, question, "Latest question fetched successfully"))
 })
 
-export {startQuestion, startQuestionFromRoom, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}
+export {startQuestion, startQuestionFromRoom, startQuestionFromRoomAndId, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}

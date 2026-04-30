@@ -157,10 +157,10 @@ export default function AuthPage() {
       if (loggeduser) {
         localStorage.setItem("user", JSON.stringify(loggeduser));
         setUser(loggeduser);
-        console.log("20");
+        //console.log("20");
         
         socket.connect()
-        console.log("21");
+        //console.log("21");
         
         socket.once("connect",()=>{
           socket.emit("register",{userId:loggeduser._id})

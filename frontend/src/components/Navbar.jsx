@@ -42,13 +42,31 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
     if (!roomId) return
     console.log("roomId",roomId);
 
-    socket.emit("join-room", {
-      roomId,
-      username,
-      id: user?._id,
-    })
-    setRoomIdInput("")
-    navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`)
+    const emitJoinRoom = () => {
+      socket.emit(
+        "join-room",
+        {
+          roomId,
+          username,
+          id: user?._id,
+        },
+        (ack) => {
+          if (!ack?.ok) {
+            console.error("Failed to join room", ack?.error)
+            return
+          }
+          setRoomIdInput("")
+          navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`)
+        }
+      )
+    }
+
+    if (!socket.connected) {
+      socket.connect()
+      socket.once("connect", emitJoinRoom)
+    } else {
+      emitJoinRoom()
+    }
   }
 
   return (
