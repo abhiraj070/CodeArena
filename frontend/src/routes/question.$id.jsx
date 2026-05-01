@@ -8,8 +8,8 @@
 // The other client receives "yjs-update-receive" → handleRemoteUpdate.
 // handleRemoteUpdate normalizes the payload and runs Y.applyUpdate(ydoc,
 
-import { Link, useSearchParams, useParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { Link, useSearchParams, useParams, useLocation } from "react-router-dom";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button.jsx";
 import {
@@ -65,35 +65,54 @@ export default function QuestionPage() {
   const ydocRef= useRef(null)
   const bindingRef= useRef(null)
   const copyTimeoutRef= useRef(null)
-  const hydrationRef = useRef(false)
+  const hydrationRef = useRef(true)
+  const location =useLocation()
 
-
+  const alreadyJoined = location.state?.alreadyJoined ?? false
   useEffect(()=>{
     setLanguage(user.language)
   },[])
 
   const onLanguageChange = (val) => {
-    const lang = val;
-    setLanguage(lang);
-      //console.log(99);
-      setCode(STARTER_CODE[lang]);
+    setLanguage(val);
+    hydrationRef.current= true
+    //console.log(99);
+    setCode(STARTER_CODE[val]);
   };
 
 
-  useEffect(()=>{
-    console.log("here");
-    if (!socket || !roomId || !user._id) return
-    console.log("here3");
-    socket.connect()
-    socket.once("connect",()=>{
-      socket.emit("join-room",{roomId, username: user.username, id: user._id})
-    })
-    console.log("here3");
-  },[socket])
+  useEffect(() => {
+    if(alreadyJoined) return
+    if (!socket || !roomId || !user?._id) return
+
+    const joinRoom = () => {
+      socket.emit("join-room", { roomId, username: user.username, id: user._id })
+    }
+
+    if (!socket.connected) {
+      socket.connect()
+    }
+
+    // If already connected, emit immediately; otherwise wait for connect.
+    if (socket.connected) {
+      joinRoom()
+    }
+
+    socket.on("connect", joinRoom)
+
+    return () => {
+      socket.off("connect", joinRoom)
+    }
+  }, [socket, roomId, user?._id, user?.username])
 
 
 
   // YJS
+
+  if(!ydocRef.current){ //ydocRef pura yjs document hai jisme 2 chize hoti hai ydoc and ytext. ydoc is unique per user.
+    const {ydoc, yText}=createYjsDoc()
+    ydocRef.current= {ydoc,yText}
+  }
 
   useEffect(()=>{
     const fetchQuestion=async ()=>{
@@ -131,12 +150,9 @@ export default function QuestionPage() {
   },[id, roomId])
 
   
-  if(!ydocRef.current){ //ydocRef pura yjs document hai jisme 2 chize hoti hai ydoc and ytext. ydoc is unique per user.
-    const {ydoc, yText}=createYjsDoc()
-    ydocRef.current= {ydoc,yText}
-  }
+  const ydoc= useMemo(()=>ydocRef.current.ydoc,[])
 
-  const {ydoc, yText}= ydocRef.current
+  const yText= useMemo(()=>ydocRef.current.yText,[]) 
 
   useEffect(() => {
     if (!roomId) return
@@ -154,9 +170,25 @@ export default function QuestionPage() {
         console.error("Failed to apply remote Yjs update", error, update)
       }
     }
-    socket.on("yjs-update-receive",handleUpdate)
+
+    const handleInit = (payload) => {
+      const normalizedInit = normalizeYjsUpdate(payload)
+      if (!normalizedInit || normalizedInit.length === 0) return
+      try {
+        Y.applyUpdate(ydoc, normalizedInit, "remote")
+      } catch (error) {
+        console.error("Failed to apply yjs-init", error)
+      }
+    }
+
+    socket.on("yjs-update-receive", handleUpdate)
+    socket.on("yjs-init", handleInit)
+
+    socket.emit("request-yjs-state", { roomId })
+
     return () => {
-      socket.off("yjs-update-receive",handleUpdate)
+      socket.off("yjs-update-receive", handleUpdate)
+      socket.off("yjs-init", handleInit)
     }
   }, [roomId, socket, ydoc])
 
@@ -176,6 +208,8 @@ export default function QuestionPage() {
 
   useEffect(() => {
     if (code === undefined || code === null) return
+    if (code === "" && !hydrationRef.current) return
+    if (roomId) return // server is the single source of truth for yText in collaborative rooms
 
     const isHydrating = hydrationRef.current
 
@@ -192,7 +226,7 @@ export default function QuestionPage() {
     } else {
       ydoc.transact(applyCode)
     }
-  }, [code, ydoc, yText])
+  }, [code, ydoc, yText, roomId])
 
   const handleEditorDidMount= (editor)=>{
     bindingRef.current = new MonacoBinding( 

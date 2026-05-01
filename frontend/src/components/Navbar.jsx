@@ -56,9 +56,12 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
             return
           }
           setRoomIdInput("")
-          navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`)
+          navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`,{
+            state: {alreadyJoined: true}
+          })
         }
       )
+
     }
 
     if (!socket.connected) {

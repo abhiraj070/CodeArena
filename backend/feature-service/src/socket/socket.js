@@ -2,6 +2,7 @@ import { ApiError } from "../utils/ApiError.js"
 import {io} from "../app.js"
 import { User } from "../models/user.model.js"
 import { client } from "../redis/redis.js"
+import * as Y from "yjs"
 
 const rooms={},joinedMyRoom={},user={},socketToUser={}
 
@@ -53,11 +54,21 @@ const initializeIO= ()=>{
             }
             socket.join(roomId)
             socketToUser[socket.id] = { id, username, roomId }
+
+            const seedCode = code ?? ""
+            const ydoc = new Y.Doc()
+            if (seedCode.length > 0) {
+                ydoc.getText("editor").insert(0, seedCode)
+            }
+            const state = Y.encodeStateAsUpdate(ydoc)
+
             rooms[roomId] = {
                 creatorId: id,
                 users: [],
                 questionId,
-                code
+                code: seedCode,
+                ydoc,
+                state,
             }
             console.log("questionId:",questionId);
             
@@ -65,12 +76,14 @@ const initializeIO= ()=>{
                 Id: id,
                 username: username
             })
+
+            socket.emit("yjs-init", state)
             callback?.({ ok: true })
         })
 
         socket.on("join-room",async({roomId, username, id}, callback)=>{ // when the execution flow reaches here it means that the user has already joined the room.
             console.log(`${username} joining room`);
-            
+            console.log('JOIN', socket.id, roomId)
             if(!rooms[roomId]){
                 callback?.({ ok: false, error: "roomId not found" })
                 return
@@ -97,10 +110,15 @@ const initializeIO= ()=>{
                 )
             ])
 
+            if (rooms[roomId]?.state) {
+              socket.emit("yjs-init", rooms[roomId].state);
+            }
+
             if(userUpdate.matchedCount === 0 || creatorUpdate.matchedCount === 0){
                 callback?.({ ok: false, error: "User not found" })
                 return
             }
+
             socket.to(roomId).emit("user_joined",`${username}`)
             console.log(`user ${username} joined roomId ${roomId}`);
             callback?.({ ok: true })
@@ -179,20 +197,33 @@ const initializeIO= ()=>{
             }
         })
 
-        socket.on("yjs-update",({update,roomId, fullText})=>{
-            const normalizedUpdate = normalizeYjsUpdate(update)
+        socket.on("request-yjs-state", ({ roomId }) => {
+            const room = rooms[roomId]
+            if (!room || !room.state) return
+            socket.emit("yjs-init", room.state)
+        })
+
+        socket.on("yjs-update",({update,roomId})=>{
+            const normalizedUpdate = normalizeYjsUpdate(update);
 
             if (!normalizedUpdate || normalizedUpdate.length === 0) {
-                console.warn("Ignoring invalid Yjs update from socket", update)
-                return
+                return;
             }
 
-            if (rooms[roomId] && typeof fullText === "string") {
-                rooms[roomId].code = fullText
-                console.log("code updated");
-                
+            const room = rooms[roomId];
+            if (!room) return;
+
+            if (!room.ydoc) {
+                room.ydoc = new Y.Doc();
+
+                if (room.state) {
+                    Y.applyUpdate(room.ydoc, room.state);
+                }
             }
-            io.to(`${roomId}`).emit("yjs-update-receive",normalizedUpdate)
+
+            Y.applyUpdate(room.ydoc, normalizedUpdate);
+            room.state = Y.encodeStateAsUpdate(room.ydoc);
+            socket.to(roomId).emit("yjs-update-receive", normalizedUpdate);
         })
 
     })
