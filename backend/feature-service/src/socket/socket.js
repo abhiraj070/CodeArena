@@ -2,7 +2,14 @@ import { ApiError } from "../utils/ApiError.js"
 import {io} from "../app.js"
 import { User } from "../models/user.model.js"
 import { client } from "../redis/redis.js"
+import axios from 'axios'
 import * as Y from "yjs"
+
+
+// we have socket.rooms and socket._id by default for every .on trigger.
+const api= axios.create({
+    baseURL: "http://localhost:8003"
+})
 
 const rooms={},user={},socketToUser={}
 
@@ -32,7 +39,10 @@ const initializeIO= ()=>{
         console.log("user connected to socket form Backend");
         
         socket.on("register",async({userId})=>{
+            console.log("user getting registered");
+            socketToUser[socket.id]=userId
             user[userId]=socket.id
+            await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
             const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
                 for (const msg of storedMessage) {
@@ -41,7 +51,7 @@ const initializeIO= ()=>{
                 }
                 await client.del(`stored-chat-message:${userId}`)
             }
-            console.log("31");
+            //console.log("31");
             
         })
 
@@ -213,12 +223,18 @@ const initializeIO= ()=>{
             }
         })
 
-        socket.on("disconnecting",()=>{
-            //console.log("rooms:");
+        socket.on("disconnecting",async()=>{
+            const userId=socketToUser[socket.id]
+            if(!userId){
+                console.log("user id is getting undefined check it");
+                return
+                
+            }
+            console.log("going offline");
             
+            await api.patch(`/feature/v1/user/online-status/${userId}?online=false`)
             // for (const roomId of socket.rooms) { //when a socket is created it adds itself in socket.rooms.and "disconnecting" can give us this socket.rooms
             //     console.log(roomId);
-                
             // }
         })
 

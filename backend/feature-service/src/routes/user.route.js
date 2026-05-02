@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile } from "../controllers/user.controller.js";
+import { login, register, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus } from "../controllers/user.controller.js";
 import { VerifyJWT } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/multer.middleware.js";
 
@@ -11,6 +11,7 @@ router.route("/pastUsersConnected").get(VerifyJWT,pastConnectedUsers)
 router.route("/recentlyConnected/:id").get(VerifyJWT,getRecentlyConnectedUsers)
 router.route("/language").patch(VerifyJWT,updatePreferredLanguage)
 router.route("/profile").patch(VerifyJWT,updateProfile)
+router.route("/online-status/:id").patch(updateUserOnlineStatus)
 router.route("/:username").get(VerifyJWT,getUserByUsername)
 
 export default router

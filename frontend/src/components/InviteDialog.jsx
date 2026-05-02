@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const PRESET = "Hi, I'd like to invite you to collaborate on a coding session.";
 
-export function InviteDialog({user, open, onClose, onSendInvite }) {
+export function InviteDialog({user, open, onSendInvite }) {
   const [message, setMessage] = useState(PRESET);
   const [code, setCode] = useState("");
 
@@ -22,7 +22,7 @@ export function InviteDialog({user, open, onClose, onSendInvite }) {
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o }>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invite to session</DialogTitle>
@@ -58,7 +58,7 @@ export function InviteDialog({user, open, onClose, onSendInvite }) {
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" >
             Cancel
           </Button>
           <Button

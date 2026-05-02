@@ -82,11 +82,6 @@ export default function AuthPage() {
         localStorage.setItem("user", JSON.stringify(signeduser));
         setUser(signeduser);
         socket.connect()
-        socket.once("connect",()=>{
-          socket.emit("register",{userId: signeduser._id})
-        })
-        console.log("socket connected");
-        
       }
       setLoginForm({
         email: signupForm.email.trim(),
@@ -158,13 +153,8 @@ export default function AuthPage() {
         localStorage.setItem("user", JSON.stringify(loggeduser));
         setUser(loggeduser);
         //console.log("20");
-        
         socket.connect()
         //console.log("21");
-        
-        socket.once("connect",()=>{
-          socket.emit("register",{userId:loggeduser._id})
-        })
         console.log("socket connected");
         
       }

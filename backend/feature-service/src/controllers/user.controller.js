@@ -130,7 +130,7 @@ const getRecentlyConnectedUsers = asyncHandler(async (req, res) => {
     if(!mongoose.Types.ObjectId.isValid(userId)){
         throw new ApiError(400, "invalid user id")
     }
-
+    
     const user = await User.findById(userId)
     .select("recentlyConnectedWith")
     .populate("recentlyConnectedWith", "_id fullName username profilePicture isOnline")
@@ -261,4 +261,38 @@ const updateProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: updatedUser }, "Profile updated successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile}
+const updateUserOnlineStatus = asyncHandler(async (req, res) => {
+    
+    const { id: userId } = req.params
+    const { online } = req.query
+
+    if(!userId){
+        throw new ApiError(400, "user id is required")
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(userId)){
+        throw new ApiError(400, "invalid user id")
+    }
+
+    if(online === undefined || online === null){
+        throw new ApiError(400, "online status is required in query params")
+    }
+
+    const isOnline = online === "true" || online === true
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { isOnline },
+        { new: true }
+    ).select("-password -refreshToken")
+
+    if(!updatedUser){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { user: updatedUser }, "User online status updated successfully"))
+})
+
+export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus}

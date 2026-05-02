@@ -32,11 +32,26 @@ export default function IndexPage({code}) {
 
 
     useEffect(()=>{
+      if(!user) return
+      console.log("userid",user._id);
+      
+      if(socket.connected){ // shifter register emit here because: kyuki login ke baad socket.connect hone me time lag rha tha, aur jab tak vo connect ho rha tha tab tak component unmount ho ja rha tha toh listner bhi har ja rha tha.
+          socket.emit("register",{userId:user._id})
+        }
+      else{
+        socket.once("connect",()=>{
+          console.log("now register starts");
+          
+          socket.emit("register",{userId:user._id})
+        })
+      }
+
       const featchConnectedUsers= async()=>{
         const res= await axios.get(`/feature/v1/user/recentlyConnected/${user._id}`)
         setConnectedUsers(res.data.data.recentlyConnected)
       }
       featchConnectedUsers()
+
     },[])
 
 
@@ -110,7 +125,6 @@ export default function IndexPage({code}) {
       <InviteDialog
         user={inviteUser}
         open={!!inviteUser}
-        onClose={() => setInviteUser(null)}
         onSendInvite={handleSendInvite}
       />
       {chatOpen&&<ChatSidebar
