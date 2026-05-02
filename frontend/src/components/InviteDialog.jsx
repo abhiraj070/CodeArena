@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const PRESET = "Hi, I'd like to invite you to collaborate on a coding session.";
 
-export function InviteDialog({ user, open, onClose, onSendInvite }) {
+export function InviteDialog({user, open, onClose, onSendInvite }) {
   const [message, setMessage] = useState(PRESET);
   const [code, setCode] = useState("");
 
@@ -17,7 +17,7 @@ export function InviteDialog({ user, open, onClose, onSendInvite }) {
       setMessage(PRESET);
       setCode("");
     }
-  }, [open, user?.id]);
+  }, [open, user?.id, user?._id]);
 
   if (!user) return null;
 
@@ -29,11 +29,11 @@ export function InviteDialog({ user, open, onClose, onSendInvite }) {
         </DialogHeader>
         <div className="flex items-center gap-3 rounded-lg border border-border p-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+            <AvatarImage src={user.profilePicture || user.avatar} alt={user.fullName || user.name} />
+            <AvatarFallback>{(user.fullName || user.name).slice(0, 2)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-medium">{user.name}</p>
+            <p className="text-sm font-medium">{user.fullName || user.name}</p>
             <p className="text-xs text-muted-foreground">
               {user.online ? "Online now" : "Offline"}
             </p>
@@ -64,8 +64,7 @@ export function InviteDialog({ user, open, onClose, onSendInvite }) {
           <Button
             className="gap-1.5"
             onClick={() =>
-              onSendInvite?.({
-                user,
+              onSendInvite({
                 message: message.trim(),
                 code: code.trim(),
               })

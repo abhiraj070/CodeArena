@@ -23,12 +23,12 @@ import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
 import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
 import { ArrowLeft, Code2, Copy, Play, Send } from "lucide-react";
 import axios from "axios";
-import { useUser } from "@/context/user.context"; 
+import { useUser } from "@/context/user.context.jsx"; 
 import { MonacoBinding } from "y-monaco"; //binds yjs and monaco
 import * as Y from "yjs";
 //import { WebsocketProvider } from "y-websocket"; // it helps sync our yjs document over websocket, automatically(without us writing socket.on() etc). it basiclly connects our yjs docs to the websocket server and handles sending and reciving automatically.
-import { createYjsDoc } from "@/Yjs/yjs";
-import { useSocket } from "@/context/socket.context";
+import { createYjsDoc } from "@/Yjs/yjs.jsx";
+import { useSocket } from "@/context/socket.context.jsx";
 
 function normalizeYjsUpdate(update) {
   if (update instanceof Uint8Array) {
@@ -93,7 +93,6 @@ export default function QuestionPage() {
       socket.connect()
     }
 
-    // If already connected, emit immediately; otherwise wait for connect.
     if (socket.connected) {
       joinRoom()
     }

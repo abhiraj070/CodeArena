@@ -87,9 +87,9 @@ export default function PeoplePage() {
     setInviteUser(null);
   };
 
-  const handleInvite=async ()=>{
-    
-  }
+  const handleInvite = (user) => {
+    setInviteUser(user);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -150,22 +150,23 @@ export default function PeoplePage() {
         </div>
         
       </main>
-      
 
-      <InviteDialog
-        user={inviteUser}
-        open={!!inviteUser}
-        onClose={() => setInviteUser(null)}
-        onSendInvite={handleSendInvite}
-      />
-      <ChatSidebar
-        open={chatOpen}
+      {inviteUser && (
+        <InviteDialog
+          user={inviteUser}
+          open={!!inviteUser}
+          onClose={() => setInviteUser(null)}
+          onSendInvite={handleSendInvite}
+        />
+      )}
+      {chatOpen&&<ChatSidebar
         onOpenChange={setChatOpen}
         conversations={conversations}
         onConversationsChange={setConversations}
         activeId={activeChatId}
         onActiveChange={setActiveChatId}
-      />
+      />}
+      
     </div>
   );
 }

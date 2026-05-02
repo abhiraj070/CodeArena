@@ -37,6 +37,10 @@ const userSchema= Schema({
         type: String,
         default: ""
     },
+    chatsWith:[{
+        type: mongoose.Types.ObjectId,
+        ref: "User"
+    }],
     refreshToken: {
         type: String
     },

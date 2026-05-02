@@ -28,9 +28,11 @@ app.use("/temp", express.static("public/temp"))
 
 import userRouter from "./routes/user.route.js"
 import quesRouter from "./routes/question.route.js"
+import messageRouter from "./routes/message.route.js"
 import { errorHandler } from "./utils/errorHandler.js"
 
 app.use("/api/v1/user", userRouter)
 app.use("/api/v1/question", quesRouter)
+app.use("/api/v1/message",messageRouter)
 app.use(errorHandler)
 export {server, io}

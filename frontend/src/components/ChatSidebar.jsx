@@ -1,4 +1,3 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -7,8 +6,6 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils.js";
 
 export function ChatSidebar({
-  open,
-  onOpenChange,
   conversations,
   onConversationsChange,
   activeId,
@@ -41,13 +38,12 @@ export function ChatSidebar({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-md">
-        {!active ? (
-          <>
-            <SheetHeader className="border-b border-border p-4">
-              <SheetTitle>Messages</SheetTitle>
-            </SheetHeader>
+    <div className="fixed right-0 top-0 z-50 flex h-screen w-full sm:w-[320px] flex-col bg-background">
+      {!active ? (
+        <>
+          <div className="border-b border-border p-4">
+            <h2 className="text-lg font-semibold">Messages</h2>
+          </div>
             <ul className="flex-1 overflow-y-auto">
               {convos.map((c) => (
                 <li key={c.id}>
@@ -83,7 +79,7 @@ export function ChatSidebar({
           </>
         ) : (
           <>
-            <SheetHeader className="flex-row items-center gap-2 space-y-0 border-b border-border p-3">
+            <div className="flex-row items-center gap-2 space-y-0 border-b border-border p-3 flex">
               <Button variant="ghost" size="icon" onClick={() => setActiveId(null)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -91,8 +87,8 @@ export function ChatSidebar({
                 <AvatarImage src={active.user.avatar} alt={active.user.name} />
                 <AvatarFallback>{active.user.name.slice(0, 2)}</AvatarFallback>
               </Avatar>
-              <SheetTitle className="text-sm">{active.user.name}</SheetTitle>
-            </SheetHeader>
+              <h3 className="text-sm font-semibold">{active.user.name}</h3>
+            </div>
             <div className="flex-1 space-y-3 overflow-y-auto bg-muted/30 p-4">
               {active.messages.map((m) => (
                 <div
@@ -139,7 +135,6 @@ export function ChatSidebar({
             </form>
           </>
         )}
-      </SheetContent>
-    </Sheet>
-  );
-}
+      </div>
+    );
+  }

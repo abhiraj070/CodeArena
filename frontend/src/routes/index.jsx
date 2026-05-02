@@ -4,8 +4,10 @@ import { QuestionContainer } from "@/components/QuestionContainer.jsx";
 import { UserList } from "@/components/UserList.jsx";
 import { InviteDialog } from "@/components/InviteDialog.jsx";
 import { ChatSidebar } from "@/components/ChatSidebar.jsx";
-import { conversations as initialConversations, users } from "@/lib/code-template.js";
+import { conversations as initialConversations } from "@/lib/code-template.js";
 import { useSocket } from "@/context/socket.context";
+import { useUser } from "@/context/user.context";
+import axios from "axios";
 
 export default function IndexPage({code}) {
   const [inviteUser, setInviteUser] = useState(null);
@@ -13,8 +15,9 @@ export default function IndexPage({code}) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeChatId, setActiveChatId] = useState(null);
   const [questionAdded, setQuestionAdded]= useState(false)
+  const [connectedUsers, setConnectedUsers]= useState([])
   const socket = useSocket();
-
+  const {user}= useUser()
 
 
   // SOCKET
@@ -28,11 +31,29 @@ export default function IndexPage({code}) {
 
 
 
+    useEffect(()=>{
+      const featchConnectedUsers= async()=>{
+        const res= await axios.get(`/feature/v1/user/recentlyConnected/${user._id}`)
+        setConnectedUsers(res.data.data.recentlyConnected)
+      }
+      featchConnectedUsers()
+    },[])
 
-  const handleSendInvite = ({ user, message, code }) => {
-    if (!user || !message) return;
+
+  const handleSendInvite = async({ message, code }) => {
+    if (!user || !message || !inviteUser) return;
     const text = code ? `${message} Session code: ${code}` : message;
-    const timestamp = Date.now();
+    console.log("user:", user._id, "receiver:", inviteUser._id);
+
+    axios.post("/feature/v1/message/sendMessage", {
+      message: text,
+      PersonA: user._id,
+      PersonB: inviteUser._id,
+    })
+    console.log("message req sent");
+    
+    
+    const timestamp = Date.now()
     let targetId = null;
 
     setConversations((prev) => {
@@ -82,7 +103,7 @@ export default function IndexPage({code}) {
       <main className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[1fr_320px]">
         <QuestionContainer questionAdded={questionAdded} code={code}/>
         <aside className="space-y-4">
-          <UserList users={users} onInvite={setInviteUser} />
+          <UserList users={connectedUsers} onInvite={setInviteUser} />
         </aside>
       </main>
 
@@ -92,14 +113,12 @@ export default function IndexPage({code}) {
         onClose={() => setInviteUser(null)}
         onSendInvite={handleSendInvite}
       />
-      <ChatSidebar
-        open={chatOpen}
-        onOpenChange={setChatOpen}
+      {chatOpen&&<ChatSidebar
         conversations={conversations}
         onConversationsChange={setConversations}
         activeId={activeChatId}
         onActiveChange={setActiveChatId}
-      />
+      />}
     </div>
   );
 }

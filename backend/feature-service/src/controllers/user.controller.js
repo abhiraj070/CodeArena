@@ -3,7 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js";
-import {joinedMyRoom} from "../socket/socket.js"
+import mongoose from "mongoose";
 
 
 const register= asyncHandler(async (req,res) => {
@@ -118,6 +118,30 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(new ApiResponse(200, { user }, "User fetched successfully"))
+})
+
+const getRecentlyConnectedUsers = asyncHandler(async (req, res) => {
+    const userId = req.params.id
+
+    if(!userId){
+        throw new ApiError(400, "user id is required")
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(userId)){
+        throw new ApiError(400, "invalid user id")
+    }
+
+    const user = await User.findById(userId)
+    .select("recentlyConnectedWith")
+    .populate("recentlyConnectedWith", "_id fullName username profilePicture isOnline")
+
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { recentlyConnected: user.recentlyConnectedWith || [] }, "Successfully fetched recently connected users"))
 })
 
 const updatePreferredLanguage = asyncHandler(async (req, res) => {
@@ -237,4 +261,4 @@ const updateProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: updatedUser }, "Profile updated successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername, updatePreferredLanguage, updateProfile}
+export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile}

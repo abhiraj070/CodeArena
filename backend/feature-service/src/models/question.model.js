@@ -1,6 +1,4 @@
 import mongoose,{Schema} from "mongoose";
-import { type } from "os";
-import { title } from "process";
 
 const questionSchema= Schema({
     description:{

@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js"
 import { client } from "../redis/redis.js"
 import * as Y from "yjs"
 
-const rooms={},joinedMyRoom={},user={},socketToUser={}
+const rooms={},user={},socketToUser={}
 
 function normalizeYjsUpdate(update) {
     if (update instanceof Uint8Array) {
@@ -99,24 +99,58 @@ const initializeIO= ()=>{
             }
             const creatorId = rooms[roomId].creatorId
 
-            const [userUpdate, creatorUpdate] = await Promise.all([
-                User.updateOne(
-                    { _id: id },
-                    { $push: { recentlyConnectedWith: { $each: [creatorId], $slice: -10 } } }
-                ),
-                User.updateOne(
-                    { _id: creatorId },
-                    { $push: { recentlyConnectedWith: { $each: [id], $slice: -10 } } }
-                )
-            ])
-
+            if(creatorId!=id){
+                console.log("starting to update recentlyConnectedWith");
+                
+                const [userUpdate, creatorUpdate] = await Promise.all([
+                    User.updateOne(
+                        { _id: id },
+                        [
+                            {$set:{
+                                recentlyConnectedWith:{
+                                    $slice:[
+                                        {$concatArrays:[
+                                            {$filter:{
+                                                input: "$recentlyConnectedWith",
+                                                cond: {$ne:["$$this",creatorId]}
+                                            }},
+                                            [creatorId]
+                                        ]},
+                                        -10
+                                    ]
+                                }
+                            }}
+                        ],
+                        {updatePipeline: true}
+                    ),
+                    User.updateOne(
+                        { _id: creatorId },
+                        [
+                            {$set:{
+                                recentlyConnectedWith:{
+                                    $slice:[
+                                        {$concatArrays:[
+                                            {$filter:{
+                                                input: "$recentlyConnectedWith",
+                                                cond: {$ne:["$$this",id]}
+                                            }},
+                                            [id]
+                                        ]},-10
+                                    ]
+                                }
+                            }}
+                        ],
+                        {updatePipeline: true}
+                    )
+                ])
+                if(userUpdate.matchedCount === 0 || creatorUpdate.matchedCount === 0){
+                    callback?.({ ok: false, error: "User not found" })
+                    return
+                }
+            }
+            
             if (rooms[roomId]?.state) {
               socket.emit("yjs-init", rooms[roomId].state);
-            }
-
-            if(userUpdate.matchedCount === 0 || creatorUpdate.matchedCount === 0){
-                callback?.({ ok: false, error: "User not found" })
-                return
             }
 
             socket.to(roomId).emit("user_joined",`${username}`)
@@ -229,5 +263,5 @@ const initializeIO= ()=>{
     })
 }
 
-export {initializeIO, joinedMyRoom, rooms}
+export {initializeIO, rooms}
 

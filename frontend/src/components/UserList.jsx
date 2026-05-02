@@ -13,13 +13,13 @@ export function UserList({ users, onInvite, title = "Recently connected" }) {
       <ul className="flex flex-col gap-1">
         {users.map((u) => (
           <li
-            key={u.id}
+            key={u._id}
             className="flex items-center gap-3 rounded-lg p-2 transition hover:bg-muted"
           >
             <div className="relative">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={u.avatar} alt={u.name} />
-                <AvatarFallback>{u.name.slice(0, 2)}</AvatarFallback>
+                <AvatarImage src={u.profilePicture} alt={u.fullName} />
+                <AvatarFallback>{u.fullName.slice(0, 2)}</AvatarFallback>
               </Avatar>
               <span
                 className={cn(
@@ -32,7 +32,6 @@ export function UserList({ users, onInvite, title = "Recently connected" }) {
               <p className="truncate text-sm font-medium">{u.name}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {u.online ? "Online" : "Offline"}
-                {u.role ? ` · ${u.role}` : ""}
               </p>
             </div>
             <Button size="sm" variant="outline" onClick={() => onInvite(u)}>
