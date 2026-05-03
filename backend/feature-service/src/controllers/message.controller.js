@@ -6,6 +6,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 
 const sendMessage = asyncHandler(async (req, res) => {
+  console.log("saving message");
+  
   const { message, personA, personB } = req.body;
     console.log(message, personA, personB);
     
@@ -90,7 +92,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 });
 
 const getMessages=asyncHandler(async (req,res) => {
-  console.log("getting all messages");
+  //console.log("getting all messages");
   
   const {personA, personB}= req.params
   if(!personA || !personB){

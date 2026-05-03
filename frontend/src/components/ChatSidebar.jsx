@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx"
 import { Input } from "@/components/ui/input.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { ArrowLeft, Send, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context";
 import { useSocket } from "@/context/socket.context";
@@ -21,6 +21,8 @@ export function ChatSidebar({
   const [active, setActive]= useState(null)
   const {user}= useUser()
   const socket= useSocket()
+  const bottomRef = useRef(null)
+
 
   useEffect(()=>{
     if(!activeId ) return
@@ -33,7 +35,11 @@ export function ChatSidebar({
       setActive(res.data.data.personB)
     }
     fetchMessages()
-  },[activeId, active])
+  },[activeId])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [chat])
 
   useEffect(()=>{
     const fectchPeople=async ()=>{
@@ -68,6 +74,20 @@ export function ChatSidebar({
       socket.off("receive-inchat-message", handleMessage) // ← cleanup
     }
   },[activeId])
+
+  const handleSend= async(message)=>{
+    socket.emit("in-chat-message",{message, senderId: user._id, receiver_id: activeId})
+    await axios.post(`/feature/v1/message/sendMessage`,{
+      message,
+      personA: user._id,
+      personB: activeId
+    })
+    
+    const id= crypto.randomUUID()
+    const properMessage= [{message, sentBy:user, _id:id}]
+    setChat((prev)=>[...prev,...properMessage])
+    setDraft("")
+  }
 
 
   return (
@@ -151,10 +171,12 @@ export function ChatSidebar({
                   </div>
                 </div>
               ))}
+              <div ref={bottomRef}></div>
             </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                handleSend(draft)
               }}
               className="flex items-center gap-2 border-t border-border p-3"
             >

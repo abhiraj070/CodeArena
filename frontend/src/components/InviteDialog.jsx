@@ -70,7 +70,6 @@ export function InviteDialog({ user, onClose, onSendInvite }) {
                 message: message.trim(),
                 code: code.trim(),
               });
-              onClose
             }}
             disabled={!message.trim()}
           >

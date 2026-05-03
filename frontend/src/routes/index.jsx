@@ -57,9 +57,9 @@ export default function IndexPage({code}) {
   const handleSendInvite = async({ message, code }) => {
     if (!user || !message || !inviteUser) return;
     const text = code ? `${message} Session code: ${code}` : message;
-    console.log("user:", user._id, "receiver:", inviteUser._id);
+    //console.log("user:", user._id, "receiver:", inviteUser._id);
 
-    axios.post("/feature/v1/message/sendMessage", {
+    await axios.post("/feature/v1/message/sendMessage", {
       message: text,
       personA: user._id,
       personB: inviteUser._id,
