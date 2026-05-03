@@ -26,7 +26,7 @@ export function UserList({ users, onInvite, title = "Recently connected" }) {
               <span
                 className={cn(
                   "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-card",
-                  user.online ? "bg-emerald-500" : "bg-zinc-300",
+                  user.isOnline ? "bg-emerald-500" : "bg-zinc-300",
                 )}
               />
             </div>

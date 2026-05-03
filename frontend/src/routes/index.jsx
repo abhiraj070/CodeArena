@@ -62,8 +62,8 @@ export default function IndexPage({code}) {
 
     axios.post("/feature/v1/message/sendMessage", {
       message: text,
-      PersonA: user._id,
-      PersonB: inviteUser._id,
+      personA: user._id,
+      personB: inviteUser._id,
     })
     console.log("message req sent");
     
@@ -99,7 +99,7 @@ export default function IndexPage({code}) {
       };
 
       targetId = newConversation.id;
-
+      setChatOpen(true)
       return [newConversation, ...prev];
     });
 
