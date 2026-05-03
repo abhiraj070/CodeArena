@@ -45,10 +45,11 @@ const initializeIO= ()=>{
             await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
             const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
+                const parse=[]
                 for (const msg of storedMessage) {
-                    const parse= JSON.parse(msg)
-                    socket.emit("receive-inchat-message",parse.message,{senderId: parse.senderId})
+                    parse.push(JSON.parse(msg)) 
                 }
+                socket.emit("receive-inchat-message",parse,{senderId: parse.senderId})
                 await client.del(`stored-chat-message:${userId}`)
             }
             //console.log("31");

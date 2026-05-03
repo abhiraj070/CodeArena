@@ -144,6 +144,31 @@ const getRecentlyConnectedUsers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { recentlyConnected: user.recentlyConnectedWith || [] }, "Successfully fetched recently connected users"))
 })
 
+const getChatsWithUsers = asyncHandler(async (req, res) => {
+    console.log("fetching people");
+    
+    const { userId } = req.params
+
+    if(!userId){
+        throw new ApiError(400, "userId is required")
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(userId)){
+        throw new ApiError(400, "invalid user id")
+    }
+
+    const user = await User.findById(userId)
+    .populate("chatsWith", "_id fullName username profilePicture isOnline language")
+
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { chatsWith: user.chatsWith || [] }, "Successfully fetched chats"))
+})
+
 const updatePreferredLanguage = asyncHandler(async (req, res) => {
     const { userId, language } = req.body
 
@@ -295,4 +320,4 @@ const updateUserOnlineStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: updatedUser }, "User online status updated successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus}
+export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, getChatsWithUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus}

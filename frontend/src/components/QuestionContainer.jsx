@@ -234,22 +234,23 @@ export function QuestionContainer({questionAdded}) {
           <ul className="divide-y divide-border">
             {filteredQuestions.map((q, i) => (
               <li key={q._id}>
-                <div className="grid grid-cols-[2rem_1.25rem_1fr_auto_auto] items-center gap-3 px-4 py-3 transition hover:bg-muted/40">
+                <div className="grid grid-cols-[2rem_1.25rem_1fr_auto] items-center gap-3 px-4 py-3 transition hover:bg-muted/40">
                   <span className="text-xs text-muted-foreground tabular-nums">{i + 1}.</span>
-                  <Circle className={`h-3.5 w-3.5 ${getDifficultyDotColor(q?.difficulty)}`} />
+                  <Circle className={`mt-1 h-3.5 w-3.5 self-start ${getDifficultyDotColor(q?.difficulty)}`} />
                   <div className="min-w-0">
                     <Link to={`/question/${q._id}`} className="block">
                       <p className="truncate text-sm font-medium text-foreground hover:underline">
                         {q.title}
                       </p>
                     </Link>
-                    
+                    <div className="mt-1">
+                      <DifficultyBadge difficulty={q.difficulty} />
+                    </div>
                   </div>
-                  <DifficultyBadge difficulty={q.difficulty} className="text-right" />
                   <button
                     type="button"
                     onClick={() => handleCreateArena(q._id)}
-                    className="cursor-pointer rounded-md border border-green-600 bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700"
+                    className="cursor-pointer rounded-md border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700"
                   >
                     Create Arena
                   </button>

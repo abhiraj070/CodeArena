@@ -4,7 +4,6 @@ import { QuestionContainer } from "@/components/QuestionContainer.jsx";
 import { UserList } from "@/components/UserList.jsx";
 import { InviteDialog } from "@/components/InviteDialog.jsx";
 import { ChatSidebar } from "@/components/ChatSidebar.jsx";
-import { conversations as initialConversations } from "@/lib/code-template.js";
 import { useSocket } from "@/context/socket.context";
 import { useUser } from "@/context/user.context";
 import axios from "axios";
@@ -12,10 +11,9 @@ import axios from "axios";
 export default function IndexPage({code}) {
   const [inviteUser, setInviteUser] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeChatId, setActiveChatId] = useState(null);
   const [questionAdded, setQuestionAdded]= useState(false)
   const [connectedUsers, setConnectedUsers]= useState([])
+  const [activeId, setActiveId]= useState(null)
   const socket = useSocket();
   const {user}= useUser()
 
@@ -66,45 +64,8 @@ export default function IndexPage({code}) {
       personB: inviteUser._id,
     })
     console.log("message req sent");
-    
-    
-    const timestamp = Date.now()
-    let targetId = null;
-
-    setConversations((prev) => {
-      const existing = prev.find((c) => c.user.id === user.id);
-      if (existing) {
-        targetId = existing.id;
-        return prev.map((c) =>
-          c.id === existing.id
-            ? {
-                ...c,
-                lastMessage: text,
-                unread: 0,
-                messages: [
-                  ...c.messages,
-                  { id: `m${timestamp}`, from: "me", text, time: "now" },
-                ],
-              }
-            : c,
-        );
-      }
-
-      const newConversation = {
-        id: `c${timestamp}`,
-        user,
-        lastMessage: text,
-        unread: 0,
-        messages: [{ id: `m${timestamp}`, from: "me", text, time: "now" }],
-      };
-
-      targetId = newConversation.id;
-      setChatOpen(true)
-      return [newConversation, ...prev];
-    });
-
-    if (targetId) setActiveChatId(targetId);
     setChatOpen(true);
+    setActiveId(inviteUser._id)
     setInviteUser(null);
   };
 
@@ -128,10 +89,8 @@ export default function IndexPage({code}) {
         onSendInvite={handleSendInvite}
       />
       {chatOpen&&<ChatSidebar
-        conversations={conversations}
-        onConversationsChange={setConversations}
-        activeId={activeChatId}
-        onActiveChange={setActiveChatId}
+        activeId={activeId}
+        setActiveId={setActiveId}
       />}
     </div>
   );
