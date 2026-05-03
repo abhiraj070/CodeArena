@@ -235,7 +235,7 @@ const initializeIO= ()=>{
             console.log("going offline")
             //console.log("userId",userId)
             
-            //await api.patch(`/feature/v1/user/online-status/${userId.id}?online=false`)
+            await api.patch(`/feature/v1/user/online-status/${userId.id || userId}?online=false`)
             // for (const roomId of socket.rooms) { //when a socket is created it adds itself in socket.rooms.and "disconnecting" can give us this socket.rooms
             //     console.log(roomId);
             // }

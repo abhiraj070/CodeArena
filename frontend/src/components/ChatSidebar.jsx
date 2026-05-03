@@ -110,7 +110,7 @@ export function ChatSidebar({
         className="relative flex h-full w-full flex-col overflow-hidden border-0 bg-card shadow-2xl shadow-black/40 sm:h-[min(85vh,720px)] sm:max-w-4xl sm:rounded-2xl sm:border sm:border-border animate-in zoom-in-95 fade-in-0 duration-200"
       >
         {/* Decorative top glow */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-primary/10 via-primary/5 to-transparent" />
 
         {/* Header */}
         <div className="relative flex items-center justify-between border-b border-border bg-background/40 px-4 py-3 backdrop-blur-md">
