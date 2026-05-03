@@ -120,6 +120,28 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user }, "User fetched successfully"))
 })
 
+const getUserById = asyncHandler(async (req, res) => {
+    const { id } = req.params
+
+    if(!id){
+        throw new ApiError(400, "user id is required")
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(id)){
+        throw new ApiError(400, "invalid user id")
+    }
+
+    const user = await User.findById(id).select("-password -refreshToken")
+
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User fetched successfully"))
+})
+
 const getRecentlyConnectedUsers = asyncHandler(async (req, res) => {
     const userId = req.params.id
 
@@ -186,7 +208,7 @@ const updatePreferredLanguage = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         { language: normalizedLanguage },
-        { new: true }
+        { returnDocument: true}
     ).select("-password -refreshToken")
 
     if(!updatedUser){
@@ -278,7 +300,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         updatePayload,
-        { new: true }
+        { returnDocument: true }
     ).select("-password -refreshToken")
 
     return res
@@ -308,7 +330,7 @@ const updateUserOnlineStatus = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         { isOnline },
-        { new: true }
+        { returnDocument: true }
     ).select("-password -refreshToken")
 
     if(!updatedUser){
@@ -320,4 +342,4 @@ const updateUserOnlineStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: updatedUser }, "User online status updated successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, getChatsWithUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus}
+export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, getChatsWithUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus, getUserById}

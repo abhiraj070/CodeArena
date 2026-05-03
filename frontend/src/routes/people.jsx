@@ -165,6 +165,10 @@ export default function PeoplePage() {
         onConversationsChange={setConversations}
         activeId={activeChatId}
         onActiveChange={setActiveChatId}
+        onClose={() => {
+          setChatOpen(false);
+          setActiveChatId(null);
+        }}
       />}
       
     </div>

@@ -159,15 +159,11 @@ export function QuestionContainer({questionAdded}) {
       socket.emit(
         "create-room",
         { roomId, username: `${user.username}`, id: user._id, questionId, code },
-        (ack) => {
-          if (!ack?.ok) {
-            console.error("Failed to create room", ack?.error)
-            return
-          }
+        
           navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
-          console.log("arena created")
-        }
       )
+      console.log("arena created")
+
     }
 
     if (!socket.connected) {

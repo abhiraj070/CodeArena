@@ -1,15 +1,17 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Button } from "@/components/ui/button.jsx";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context";
+import { useSocket } from "@/context/socket.context";
 import axios from "axios";
 
 export function ChatSidebar({
   activeId,
-  setActiveId
+  setActiveId,
+  onClose,
 }) {
   console.log("inside chatsidebar");
   
@@ -18,20 +20,20 @@ export function ChatSidebar({
   const [chatingWith, setChattingWith] = useState([]);
   const [active, setActive]= useState(null)
   const {user}= useUser()
+  const socket= useSocket()
 
   useEffect(()=>{
-    if(!activeId || !user?._id) return
+    if(!activeId ) return
     const fetchMessages= async()=>{
-      console.log("userid:",user._id,"activeId:",activeId);
+      //console.log("userid:",user._id,"activeId:",activeId);
       
       const res= await axios.get(`feature/v1/message/getMessages/${user._id}/${activeId}`)
       setChat(res.data.data.messages || [])
-      console.log("req:",res.data.data);
-      
+      console.log("req:",res.data.data.messages);
       setActive(res.data.data.personB)
     }
     fetchMessages()
-  },[activeId, user?._id])
+  },[activeId, active])
 
   useEffect(()=>{
     const fectchPeople=async ()=>{
@@ -41,14 +43,41 @@ export function ChatSidebar({
       setChattingWith(res.data.data.chatsWith)
     }
     fectchPeople()
-  },[])
+
+    const handleMessage= ({message, senderId})=>{
+      //console.log("sender",senderId,"active:",activeId);
+      if(!activeId) return
+      
+      if(senderId.toString()!==activeId.toString()) return
+      console.log("received message");
+      //console.log("sender",senderId);
+      
+      const id=crypto.randomUUID()
+      let sender
+      (async()=>{
+        const res= await axios.get(`/feature/v1/user/details/${senderId}`)
+        sender=res.data.data.user
+        const receivedMessage= [{message, sentBy: sender, _id:id}]
+        console.log("recived:",receivedMessage);
+        setChat((prev)=>[...prev,...receivedMessage])
+      })() //this is a async IIFE: Immediatly invoked function expression
+    }
+    socket.on("receive-inchat-message",handleMessage)
+
+    return () => {
+      socket.off("receive-inchat-message", handleMessage) // ← cleanup
+    }
+  },[activeId])
 
 
   return (
     <div className="fixed right-0 top-0 z-50 flex h-screen w-full sm:w-[320px] flex-col bg-background">
       {!active ? (
         <>
-          <div className="border-b border-border p-4">
+          <div className="flex items-center gap-3 border-b border-border p-4">
+            <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+              <X className="h-4 w-4" />
+            </Button>
             <h2 className="text-lg font-semibold">Messages</h2>
           </div>
             <ul className="flex-1 overflow-y-auto">
@@ -87,7 +116,7 @@ export function ChatSidebar({
         ) : (
           <>
             <div className="flex-row items-center gap-2 space-y-0 border-b border-border p-3 flex">
-              <Button variant="ghost" size="icon" onClick={() => setActive(null)}>
+              <Button variant="ghost" size="icon" onClick={()=>{setActive(null),setActiveId(null)}}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <Avatar className="h-8 w-8">

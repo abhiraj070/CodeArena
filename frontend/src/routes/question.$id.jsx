@@ -119,6 +119,8 @@ export default function QuestionPage() {
         
         if (id && id !== "null" && id !== "undefined") {
           //console.log("19 — treating id as valid", id);
+          console.log("roomid:",roomId,"id:",id);
+          
           const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
@@ -131,13 +133,14 @@ export default function QuestionPage() {
           return
         }
         console.log("code sync and question featch start");
-        
-        const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
-        //console.log("got question from roomid");
-        //console.log("ques:",res.data.data.question);
-        setQuestion( res.data.data.question)
+        if(!question){
+          const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
+          //console.log("got question from roomid");
+          //console.log("ques:",res.data.data.question);
+          setQuestion( res.data.data.question)
+          setCode(res.data.data.code)
+        }
         hydrationRef.current = true
-        setCode(res.data.data.code)
         console.log("code synced");
         
       } catch (error) {
@@ -303,6 +306,9 @@ export default function QuestionPage() {
     }
   }
 
+  const handleArenaLeave=()=>{
+    socket.emit("leave-room",{roomId, id: user._id})
+  }
 
 
 
@@ -325,7 +331,7 @@ export default function QuestionPage() {
             className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
             aria-label="Back to problems"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" onClick={handleArenaLeave}/>
           </Link>
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Code2 className="h-4 w-4" />

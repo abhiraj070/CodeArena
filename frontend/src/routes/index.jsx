@@ -11,6 +11,7 @@ import axios from "axios";
 export default function IndexPage({code}) {
   const [inviteUser, setInviteUser] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [openInviteBox, setOpenInviteBox]= useState(false)
   const [questionAdded, setQuestionAdded]= useState(false)
   const [connectedUsers, setConnectedUsers]= useState([])
   const [activeId, setActiveId]= useState(null)
@@ -64,9 +65,16 @@ export default function IndexPage({code}) {
       personB: inviteUser._id,
     })
     console.log("message req sent");
+    socket.emit("in-chat-message",{message: text, receiver_id: inviteUser._id, senderId: user._id})
     setChatOpen(true);
     setActiveId(inviteUser._id)
     setInviteUser(null);
+    setOpenInviteBox(false)
+  };
+
+  const handleInviteUser = (selectedUser) => {
+    setInviteUser(selectedUser);
+    setOpenInviteBox(true);
   };
 
   return (
@@ -79,18 +87,25 @@ export default function IndexPage({code}) {
       <main className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-5 lg:grid-cols-[1fr_320px]">
         <QuestionContainer questionAdded={questionAdded} code={code}/>
         <aside className="space-y-4">
-          <UserList users={connectedUsers} onInvite={setInviteUser} />
+          <UserList users={connectedUsers} onInvite={handleInviteUser} />
         </aside>
       </main>
 
-      <InviteDialog
+      {openInviteBox&&<InviteDialog
         user={inviteUser}
-        open={!!inviteUser}
+        onClose={() => {
+          setOpenInviteBox(false);
+          setInviteUser(null);
+        }}
         onSendInvite={handleSendInvite}
-      />
+      />}
       {chatOpen&&<ChatSidebar
         activeId={activeId}
         setActiveId={setActiveId}
+        onClose={() => {
+          setChatOpen(false);
+          setActiveId(null);
+        }}
       />}
     </div>
   );

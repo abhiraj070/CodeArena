@@ -5,9 +5,9 @@ const errorHandler = (err, req, res, next) => {
   const statusCode = err?.statusCode || 500;
   const message = err?.message || 'Internal Server Error';
 
-  console.error(message);
+  //console.error(message);
   //console.error(statusCode);
-  console.error(err.response.data);
+  //console.error(err.response.data);
 
   if (err instanceof ApiError) {
     return res.status(statusCode).json({

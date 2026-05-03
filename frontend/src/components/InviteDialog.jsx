@@ -1,32 +1,34 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
 import { Send } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const PRESET = "Hi, I'd like to invite you to collaborate on a coding session.";
 
-export function InviteDialog({user, open, onSendInvite }) {
+export function InviteDialog({ user, onClose, onSendInvite }) {
   const [message, setMessage] = useState(PRESET);
   const [code, setCode] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setMessage(PRESET);
-      setCode("");
-    }
-  }, [open, user?.id, user?._id]);
 
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o }>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Invite to session</DialogTitle>
-        </DialogHeader>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
+      onClick={onClose}
+    >
+      <div
+        className="w-full rounded-xl border border-border bg-background p-4 shadow-xl sm:max-w-md"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">Invite to session</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+
         <div className="flex items-center gap-3 rounded-lg border border-border p-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.profilePicture || user.avatar} alt={user.fullName || user.name} />
@@ -58,23 +60,24 @@ export function InviteDialog({user, open, onSendInvite }) {
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" >
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             className="gap-1.5"
-            onClick={() =>
+            onClick={() => {
               onSendInvite({
                 message: message.trim(),
                 code: code.trim(),
-              })
-            }
+              });
+              onClose
+            }}
             disabled={!message.trim()}
           >
             <Send className="h-4 w-4" /> Send invite
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

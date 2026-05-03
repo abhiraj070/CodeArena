@@ -11,7 +11,7 @@ const api= axios.create({
     baseURL: "http://localhost:8003"
 })
 
-const rooms={},user={},socketToUser={}
+const rooms={},userToSocket={},socketToUser={}
 
 function normalizeYjsUpdate(update) {
     if (update instanceof Uint8Array) {
@@ -40,8 +40,12 @@ const initializeIO= ()=>{
         
         socket.on("register",async({userId})=>{
             console.log("user getting registered");
+            //console.log("type of userid:",typeof userId);
+            
             socketToUser[socket.id]=userId
-            user[userId]=socket.id
+            userToSocket[userId]=socket.id
+            console.log("userToSocket:",userToSocket[userId]);
+            
             await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
             const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
@@ -56,11 +60,10 @@ const initializeIO= ()=>{
             
         })
 
-        socket.on("create-room",({roomId, username, id, questionId, code}, callback)=>{
+        socket.on("create-room",({roomId, username, id, questionId, code})=>{
             console.log("starting the room creation");
             
             if(rooms[roomId]){
-                callback?.({ ok: false, error: "Room already exist" })
                 return
             }
             socket.join(roomId)
@@ -89,21 +92,21 @@ const initializeIO= ()=>{
             })
 
             socket.emit("yjs-init", state)
-            callback?.({ ok: true })
         })
 
-        socket.on("join-room",async({roomId, username, id}, callback)=>{ // when the execution flow reaches here it means that the user has already joined the room.
+        socket.on("join-room",async({roomId, username, id})=>{ // when the execution flow reaches here it means that the user has already joined the room.
             console.log(`${username} joining room`);
-            console.log('JOIN', socket.id, roomId)
+            console.log('JOIN', username, roomId)
             if(!rooms[roomId]){
-                callback?.({ ok: false, error: "roomId not found" })
                 return
             }
-            console.log("users");
+            //console.log("users");
 
             socket.join(roomId)
             socketToUser[socket.id] = { id, username, roomId }
             rooms[roomId].users.push({Id: id, username: username})
+            //console.log("user",rooms[roomId].users);
+            
             for(const users of rooms[roomId].users){
                 console.log(users);
      
@@ -155,7 +158,6 @@ const initializeIO= ()=>{
                     )
                 ])
                 if(userUpdate.matchedCount === 0 || creatorUpdate.matchedCount === 0){
-                    callback?.({ ok: false, error: "User not found" })
                     return
                 }
             }
@@ -166,7 +168,6 @@ const initializeIO= ()=>{
 
             socket.to(roomId).emit("user_joined",`${username}`)
             console.log(`user ${username} joined roomId ${roomId}`);
-            callback?.({ ok: true })
             
         })
 
@@ -179,6 +180,7 @@ const initializeIO= ()=>{
         })
 
         socket.on("leave-room",({roomId, id})=>{
+            console.log("leaving the room")
             if(!rooms[roomId]){
                 return new ApiError(404,"roomId not found")
             }
@@ -186,7 +188,11 @@ const initializeIO= ()=>{
             rooms[roomId].users = rooms[roomId].users.filter((user)=>{
                 return user.Id!= id
             })
-
+            if(rooms[roomId].users.length===0){
+                delete rooms[roomId]
+            }
+            delete socketToUser[socket.id]
+            delete userToSocket[id]
         })
         //disconnect connection
         socket.on("disconnect",(reason)=>{
@@ -196,29 +202,24 @@ const initializeIO= ()=>{
             if (userInfo) {
                 const { id, username, roomId } = userInfo
                 
-                // Remove user from the room
                 if (rooms[roomId]) {
                     rooms[roomId].users = rooms[roomId].users.filter((user) => user.Id !== id)
                     console.log(`User ${username} removed from room ${roomId}`)
                     
-                    // If no users left in room, delete the room
                     if (rooms[roomId].users.length === 0) {
                         delete rooms[roomId]
                         console.log(`Room ${roomId} deleted (no users left)`)
                     } else {
-                        // Notify remaining users that someone left
                         io.to(roomId).emit("user_left", username)
                     }
                 }
                 
-                // Remove from socket tracking
                 delete socketToUser[socket.id]
             }
             
-            // Remove from user tracking
-            for (const userId in user) {
-                if (user[userId] === socket.id) {
-                    delete user[userId]
+            for (const userId in userToSocket) {
+                if (userToSocket[userId] === socket.id) {
+                    delete userToSocket[userId]
                     break
                 }
             }
@@ -231,20 +232,34 @@ const initializeIO= ()=>{
                 return
                 
             }
-            console.log("going offline");
+            console.log("going offline")
+            //console.log("userId",userId)
             
-            await api.patch(`/feature/v1/user/online-status/${userId}?online=false`)
+            //await api.patch(`/feature/v1/user/online-status/${userId.id}?online=false`)
             // for (const roomId of socket.rooms) { //when a socket is created it adds itself in socket.rooms.and "disconnecting" can give us this socket.rooms
             //     console.log(roomId);
             // }
         })
 
-        socket.on("in-chat-message",async({message,recever_id,senderId})=>{
-            if(user[recever_id]){
-                io.to(user[recever_id]).emit("receive-inchat-message",message,{senderId: senderId})
+        socket.on("in-chat-message",async({message,receiver_id,senderId})=>{
+                console.log("emiting the message to the receiver");
+                //console.log("reveiver:",receiver_id);
+                console.log("users registered");
+                
+                for(const u in userToSocket){
+                    console.log(u);
+                    
+                }
+                console.log(userToSocket[receiver_id]);
+                
+            if(userToSocket[receiver_id]){
+                    console.log("message emited to the receiver");
+                    console.log("Sending senderId:", senderId);
+                    
+                io.to(userToSocket[receiver_id]).emit("receive-inchat-message",{message, senderId})
             }
             else{
-                await client.lpush(`stored-chat-message:${recever_id}`,JSON.stringify({message, senderId}))
+                await client.lpush(`stored-chat-message:${receiver_id}`,JSON.stringify({message, senderId}))
             }
         })
 
