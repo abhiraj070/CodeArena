@@ -43,6 +43,7 @@ export function ChatSidebar({
   }, [chat]);
 
   useEffect(() => {
+    if (!user?._id) return;
     const fectchPeople = async () => {
       const res = await axios.get(`feature/v1/user/chatsWith/${user._id}`);
       console.log("people", res.data.data);
@@ -50,6 +51,8 @@ export function ChatSidebar({
       setChattingWith(res.data.data.chatsWith);
     };
     fectchPeople();
+
+    if (!socket) return;
 
     const handleMessage = ({ message, senderId }) => {
       //console.log("sender",senderId,"active:",activeId);
@@ -74,9 +77,10 @@ export function ChatSidebar({
     return () => {
       socket.off("receive-inchat-message", handleMessage); // ← cleanup
     };
-  }, [activeId]);
+  }, [activeId, socket, user?._id]);
 
   const handleSend = async (message) => {
+    if (!socket) return;
     socket.emit("in-chat-message", { message, senderId: user._id, receiver_id: activeId });
     await axios.post(`/feature/v1/message/sendMessage`, {
       message,

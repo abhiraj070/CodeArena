@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context.jsx";
-import { useSocket } from "@/context/socket.context";
 
 const EMPTY_LOGIN_FORM = {
   email: "",
@@ -33,7 +32,6 @@ export default function AuthPage() {
   const [feedback, setFeedback] = useState({ type: "", text: "" });
   const [profilePreview, setProfilePreview] = useState("");
   const {setUser, user}= useUser()
-  const socket = useSocket();
   
 
 
@@ -81,7 +79,6 @@ export default function AuthPage() {
       if (signeduser) {
         localStorage.setItem("user", JSON.stringify(signeduser));
         setUser(signeduser);
-        socket.connect()
       }
       setLoginForm({
         email: signupForm.email.trim(),
@@ -152,9 +149,6 @@ export default function AuthPage() {
       if (loggeduser) {
         localStorage.setItem("user", JSON.stringify(loggeduser));
         setUser(loggeduser);
-        //console.log("20");
-        socket.connect()
-        //console.log("21");
         console.log("socket connected");
         
       }

@@ -34,20 +34,16 @@ function normalizeYjsUpdate(update) {
 }
 
 const initializeIO= ()=>{
-    io.on("connection",(socket)=>{
+    io.on("connection",async(socket)=>{
         //console.log("32");
         console.log("user connected to socket form Backend");
+        const userId= socket.handshake.auth.userId
+        socketToUser[socket.id]=userId
+        userToSocket[userId]=socket.id
+        console.log("user",userId);
         
-        socket.on("register",async({userId})=>{
-            console.log("user getting registered");
-            //console.log("type of userid:",typeof userId);
-            
-            socketToUser[socket.id]=userId
-            userToSocket[userId]=socket.id
-            console.log("userToSocket:",userToSocket[userId]);
-            
-            await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
-            const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
+        await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
+        const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
                 const parse=[]
                 for (const msg of storedMessage) {
@@ -56,9 +52,6 @@ const initializeIO= ()=>{
                 socket.emit("receive-inchat-message",parse,{senderId: parse.senderId})
                 await client.del(`stored-chat-message:${userId}`)
             }
-            //console.log("31");
-            
-        })
 
         socket.on("create-room",({roomId, username, id, questionId, code})=>{
             console.log("starting the room creation");

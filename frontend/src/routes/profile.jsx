@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Navbar } from "@/components/Navbar.jsx";
-import { ChatSidebar } from "@/components/ChatSidebar.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { Card } from "@/components/ui/card.jsx";
@@ -178,7 +177,6 @@ export default function ProfilePage() {
         </Card>
       </main>
 
-      <ChatSidebar open={chatOpen} onOpenChange={setChatOpen} />
     </div>
   );
 }

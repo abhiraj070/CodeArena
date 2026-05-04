@@ -309,6 +309,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 })
 
 const updateUserOnlineStatus = asyncHandler(async (req, res) => {
+    console.log("updating online or offline");
     
     const { id: userId } = req.params
     const { online } = req.query

@@ -7,6 +7,8 @@ export const UserProvider=({children})=>{
         try {
             const storedUser = localStorage.getItem("user")
             if(!storedUser || storedUser === "null"){
+                console.log("user not found");
+                
                 return null
             }
             return JSON.parse(storedUser)

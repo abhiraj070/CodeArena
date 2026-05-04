@@ -86,6 +86,7 @@ export function QuestionContainer({questionAdded}) {
         setQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
         setFilteredQuestions((prev) => mergeUniqueById(prev, incomingQuestions))
         setCursor(nextCursor)
+        
         const more = Boolean(nextCursor)
         setHasMore(more)
       } catch (error) {

@@ -37,7 +37,7 @@ export function InviteDialog({ user, onClose, onSendInvite }) {
           <div>
             <p className="text-sm font-medium">{user.fullName || user.name}</p>
             <p className="text-xs text-muted-foreground">
-              {user.online ? "Online now" : "Offline"}
+              {user.isOnline ? "Online now" : "Offline"}
             </p>
           </div>
         </div>
@@ -59,7 +59,7 @@ export function InviteDialog({ user, onClose, onSendInvite }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>

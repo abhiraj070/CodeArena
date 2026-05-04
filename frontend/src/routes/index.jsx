@@ -11,7 +11,6 @@ import axios from "axios";
 export default function IndexPage({code}) {
   const [inviteUser, setInviteUser] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [openInviteBox, setOpenInviteBox]= useState(false)
   const [questionAdded, setQuestionAdded]= useState(false)
   const [connectedUsers, setConnectedUsers]= useState([])
   const [activeId, setActiveId]= useState(null)
@@ -21,7 +20,7 @@ export default function IndexPage({code}) {
 
   // SOCKET
     useEffect(()=>{
-
+      if(!socket) return
       socket.on("connect",()=>{
         console.log("socket connected from the client side");
       })
@@ -31,19 +30,10 @@ export default function IndexPage({code}) {
 
 
     useEffect(()=>{
-      if(!user) return
+      if(!user || !socket) return
       console.log("userid",user._id);
       
-      if(socket.connected){ // shifter register emit here because: kyuki login ke baad socket.connect hone me time lag rha tha, aur jab tak vo connect ho rha tha tab tak component unmount ho ja rha tha toh listner bhi har ja rha tha.
-          socket.emit("register",{userId:user._id})
-        }
-      else{
-        socket.once("connect",()=>{
-          console.log("now register starts");
-          
-          socket.emit("register",{userId:user._id})
-        })
-      }
+      
 
       const featchConnectedUsers= async()=>{
         const res= await axios.get(`/feature/v1/user/recentlyConnected/${user._id}`)
@@ -51,7 +41,7 @@ export default function IndexPage({code}) {
       }
       featchConnectedUsers()
 
-    },[])
+    },[user, socket])
 
 
   const handleSendInvite = async({ message, code }) => {
@@ -69,12 +59,10 @@ export default function IndexPage({code}) {
     setChatOpen(true);
     setActiveId(inviteUser._id)
     setInviteUser(null);
-    setOpenInviteBox(false)
   };
 
   const handleInviteUser = (selectedUser) => {
     setInviteUser(selectedUser);
-    setOpenInviteBox(true);
   };
 
   return (
@@ -91,10 +79,9 @@ export default function IndexPage({code}) {
         </aside>
       </main>
 
-      {openInviteBox&&<InviteDialog
+      {inviteUser&&<InviteDialog
         user={inviteUser}
         onClose={() => {
-          setOpenInviteBox(false);
           setInviteUser(null);
         }}
         onSendInvite={handleSendInvite}

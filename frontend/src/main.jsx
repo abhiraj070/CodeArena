@@ -11,13 +11,13 @@ axios.defaults.withCredentials = true;
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <SocketProvider>
-      <UserProvider>
+    <UserProvider>
+      <SocketProvider>
         <BrowserRouter future={{ v7_relativeSplatPath: true }}>
           <App />
         </BrowserRouter>
-      </UserProvider>
-    </SocketProvider>
+      </SocketProvider>
+    </UserProvider>
     
   </React.StrictMode>,
 );

@@ -7,18 +7,20 @@ import { Button } from "@/components/ui/button.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Search } from "lucide-react";
-import { conversations as initialConversations } from "@/lib/code-template.js";
 import { cn } from "@/lib/utils.js";
+import { useUser } from "@/context/user.context";
+import { useSocket } from "@/context/socket.context";
 import axios from "axios";
 
 export default function PeoplePage() {
   const [search, setSearch] = useState("");
   const [inviteUser, setInviteUser] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeChatId, setActiveChatId] = useState(null);
   const [searchedUser, setSearchedUser] = useState(null);
   const [errorMessage, setErrorMessage]= useState(null)
+  const [activeId, setActiveId]= useState(null)
+  const {user}= useUser()
+  const socket= useSocket()
 
   const handleSearch =async (e) => {
     e.preventDefault();
@@ -26,6 +28,7 @@ export default function PeoplePage() {
 
     if(query === ""){
       setSearchedUser(null);
+      setActiveId(null)
       setErrorMessage(null)
       return
     }
@@ -33,6 +36,7 @@ export default function PeoplePage() {
     try {
       const res= await axios.get(`/feature/v1/user/${query}`)
       setSearchedUser(res.data.data.user)
+      setActiveId(res.data.data.user._id)
       setErrorMessage(null)
     } catch (error) {
       const message =
@@ -40,51 +44,27 @@ export default function PeoplePage() {
         error?.message ||
         "Failed to add question";
         setSearchedUser(null)
+        setActiveId(null)
         setErrorMessage(message)
     }
   };
 
-  const handleSendInvite = ({ user, message, code }) => {
-    if (!user || !message) return;
+  const handleSendInvite = async ({message, code }) => {
+    if (!user || !message || !inviteUser) return;
     const text = code ? `${message} Session code: ${code}` : message;
-    const timestamp = Date.now();
-    let targetId = null;
+    //console.log("user:", user._id, "receiver:", inviteUser._id);
 
-    setConversations((prev) => {
-      const existing = prev.find((c) => c.user.id === user.id);
-      if (existing) {
-        targetId = existing.id;
-        return prev.map((c) =>
-          c.id === existing.id
-            ? {
-                ...c,
-                lastMessage: text,
-                unread: 0,
-                messages: [
-                  ...c.messages,
-                  { id: `m${timestamp}`, from: "me", text, time: "now" },
-                ],
-              }
-            : c,
-        );
-      }
-
-      const newConversation = {
-        id: `c${timestamp}`,
-        user,
-        lastMessage: text,
-        unread: 0,
-        messages: [{ id: `m${timestamp}`, from: "me", text, time: "now" }],
-      };
-
-      targetId = newConversation.id;
-
-      return [newConversation, ...prev];
-    });
-
-    if (targetId) setActiveChatId(targetId);
+    await axios.post("/feature/v1/message/sendMessage", {
+      message: text,
+      personA: user._id,
+      personB: inviteUser._id,
+    })
+    console.log("message req sent");
+    socket.emit("in-chat-message",{message: text, receiver_id: inviteUser._id, senderId: user._id})
     setChatOpen(true);
+    setActiveId(inviteUser._id)
     setInviteUser(null);
+    setOpenInviteBox(false)
   };
 
   const handleInvite = (user) => {
@@ -154,20 +134,16 @@ export default function PeoplePage() {
       {inviteUser && (
         <InviteDialog
           user={inviteUser}
-          open={!!inviteUser}
           onClose={() => setInviteUser(null)}
           onSendInvite={handleSendInvite}
         />
       )}
       {chatOpen&&<ChatSidebar
-        onOpenChange={setChatOpen}
-        conversations={conversations}
-        onConversationsChange={setConversations}
-        activeId={activeChatId}
-        onActiveChange={setActiveChatId}
+        activeId={activeId}
+        setActiveId={setActiveId}
         onClose={() => {
           setChatOpen(false);
-          setActiveChatId(null);
+          setActiveId(null);
         }}
       />}
       

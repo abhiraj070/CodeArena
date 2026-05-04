@@ -30,9 +30,8 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    socket.disconnect()
     console.log("socket disconnected");
-    
+    socket.disconnect()
     navigate("/auth");
   };
 
@@ -50,18 +49,11 @@ export function Navbar({ onOpenChat, setQuestionAdded, questionAdded }) {
           username,
           id: user?._id,
         },
-        (ack) => {
-          if (!ack?.ok) {
-            console.error("Failed to join room", ack?.error)
-            return
-          }
           setRoomIdInput("")
-          navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`,{
-            state: {alreadyJoined: true}
-          })
-        }
       )
-
+      navigate(`/question/${null}/?roomId=${encodeURIComponent(roomId)}`,{
+        state: {alreadyJoined: true}
+      })
     }
 
     if (!socket.connected) {

@@ -13,6 +13,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
     console.log("starting to get all the question");
     
     const {cursor,limit}= req.query
+    //console.log("cursor:",cursor);
     const parsedLimit= Number(limit) || 10
     if(parsedLimit <= 0){
         throw new ApiError(400, "limit must be greater than 0")
@@ -21,6 +22,9 @@ const getAllQuestion= asyncHandler(async (req,res) => {
         const cachedValue= await client.get("startingQuestions")
         const startCursor= await client.get("startCursor")
         //console.log(13);
+        //console.log("cachedCursor",startCursor);
+        
+        console.log("returning cached questions");
         
         if(cachedValue){
             return res
@@ -44,10 +48,14 @@ const getAllQuestion= asyncHandler(async (req,res) => {
         throw new ApiError(404, "No more questions to display")
     }
     console.log("got all questions");
-    
-    await client.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
     const nextCursor= questionToDisplay.length? questionToDisplay[questionToDisplay.length-1]._id : null
-    await client.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
+
+    
+    if(!cursor){
+        await client.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
+        await client.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
+
+    }
     return res
     .status(200)
     .json(new ApiResponse(200,{questions: questionToDisplay, nextCursor: nextCursor}, "successfully fetched limit number of questions from db"))
