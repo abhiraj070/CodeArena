@@ -30,10 +30,8 @@ export default function IndexPage({code}) {
 
 
     useEffect(()=>{
-      if(!user || !socket) return
+      if(!user) return
       console.log("userid",user._id);
-      
-      
 
       const featchConnectedUsers= async()=>{
         const res= await axios.get(`/feature/v1/user/recentlyConnected/${user._id}`)
@@ -41,7 +39,7 @@ export default function IndexPage({code}) {
       }
       featchConnectedUsers()
 
-    },[user, socket])
+    },[user])
 
 
   const handleSendInvite = async({ message, code }) => {
@@ -81,9 +79,7 @@ export default function IndexPage({code}) {
 
       {inviteUser&&<InviteDialog
         user={inviteUser}
-        onClose={() => {
-          setInviteUser(null);
-        }}
+        onClose={() => setInviteUser(null)}
         onSendInvite={handleSendInvite}
       />}
       {chatOpen&&<ChatSidebar
