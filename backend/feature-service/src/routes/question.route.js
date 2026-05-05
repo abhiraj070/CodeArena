@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {getAllQuestion, getNewlyCreatedQuestion, startQuestion, startQuestionFromRoom, startQuestionFromRoomAndId, storeAQuestion} from "../controllers/question.controller.js"
+import {getAllQuestion, getNewlyCreatedQuestion, getQuestionById, startQuestion, startQuestionFromRoom, startQuestionFromRoomAndId, storeAQuestion} from "../controllers/question.controller.js"
 import { VerifyJWT } from "../middleware/auth.middleware.js";
 import { parseTestCases } from "../middleware/parseTestCases.js";
 const router= Router()
@@ -8,6 +8,7 @@ const router= Router()
 router.route("/startQues/:ques_id/:roomId").get(VerifyJWT,startQuestion)
 router.route("/startQuesByRoom/:roomId").get(startQuestionFromRoom)
 router.route("/startQuesByRoomAndId/:roomId").get(startQuestionFromRoomAndId)
+router.route("/getAQuestion/:ques_id").get(getQuestionById)
 router.route("/getQuestions").get(VerifyJWT,getAllQuestion)
 router.route("/newlyCreatedQuestion").get(VerifyJWT,getNewlyCreatedQuestion)
 router.route("/storeQuestion").post(VerifyJWT, parseTestCases, storeAQuestion)

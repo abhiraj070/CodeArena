@@ -11,6 +11,10 @@ const LANGUAGE_MAP = {
   java: 62
 };
 
+const api= axios.create({
+    baseURL:"http://localhost:8003"
+})
+
 async function getResult(token){
     while(true){
         const res = await axios.get(
@@ -32,28 +36,37 @@ async function getResult(token){
     }
 }
 
-async function createSubmission(code, language_id, input){
-    const res= await axios.get("https://judge0-ce.p.rapidapi.com/submissions",
+try {
+    const res = await axios.post(
+        "https://judge0-ce.p.rapidapi.com/submissions",
         {
-            source_code: code,
-            language_id,
-            stdin: input
+            source_code: "print('hello')",
+            language_id: 71,
+            stdin: ""
         },
         {
             headers: {
                 "Content-Type": "application/json",
-                "X-RapidAPI-Key": process.env.RAPIDAPI,
+                "X-RapidAPI-Key": "YOUR_KEY_HERE",
                 "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
             }
         }
-    )
-    return res.data.token
+    );
+    console.log("SUCCESS:", res.data);
+} catch (err) {
+    console.error("STATUS:", err.response?.status);
+    console.error("DATA:", err.response?.data);
+    console.error("MESSAGE:", err.message);
 }
 
 
 async function runCode(code, input, language){
     const language_id= LANGUAGE_MAP[language]
+    console.log("running create submission");
+    
     const token= await createSubmission(code, language_id, input)
+    console.log("running get result");
+    
     const result= await getResult(token)
     return {
         stdout: result.stdout,
@@ -113,7 +126,10 @@ const worker= new Worker("code-execution",async (job)=>{
     const {code, language, ques_id, type, roomId}= job.data
     console.log("reached worker");
     
-    const question= await axios.get(`/feature/v1/question/getAQuestion/${ques_id}`)
+    const response= await api.get(`/feature/v1/question/getAQuestion/${ques_id}`)
+    const question= response.data.data
+    //console.log("question:",question.hiddenTestCases);
+    
     console.log("executing execute code");
     const result = await executeCode(code, language, question, type)
     await client.publish("code-result", JSON.stringify({result,roomId}))

@@ -50,7 +50,7 @@ const initializeIO= ()=>{
                     parse.push(JSON.parse(msg)) 
                 }
                 socket.emit("receive-inchat-message",parse,{senderId: parse.senderId})
-                await client.del(`stored-chat-message:${userId}`)
+                await redis.del(`stored-chat-message:${userId}`)
             }
 
         socket.on("create-room",({roomId, username, id, questionId, code})=>{

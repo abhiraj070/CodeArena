@@ -45,7 +45,9 @@ const getAllQuestion= asyncHandler(async (req,res) => {
     //console.log(questionToDisplay);
     
     if(questionToDisplay.length===0){
-        throw new ApiError(404, "No more questions to display")
+        return res
+        .status(200)
+        .json(new ApiResponse(200,{questions: [], nextCursor: null}, "no more questions to display"))
     }
     console.log("got all questions");
     const nextCursor= questionToDisplay.length? questionToDisplay[questionToDisplay.length-1]._id : null
@@ -53,7 +55,7 @@ const getAllQuestion= asyncHandler(async (req,res) => {
     
     if(!cursor){
         await redis.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
-        await reids.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
+        await redis.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
 
     }
     return res
@@ -206,4 +208,20 @@ const getNewlyCreatedQuestion= asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, question, "Latest question fetched successfully"))
 })
 
-export {startQuestion, startQuestionFromRoom, startQuestionFromRoomAndId, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion}
+const getQuestionById = asyncHandler(async (req, res) => {
+    console.log("getting question");
+    
+    const { ques_id } = req.params
+    if (!ques_id) {
+        throw new ApiError(400, "Question id is required")
+    }
+    const question = await Questions.findById(ques_id).select("visibleTestCases hiddenTestCases ")
+    if (!question) {
+        throw new ApiError(404, "Question not found")
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200, question, "Question fetched successfully"))
+})
+
+export {startQuestion, startQuestionFromRoom, startQuestionFromRoomAndId, getAllQuestion, storeAQuestion, getNewlyCreatedQuestion, getQuestionById}

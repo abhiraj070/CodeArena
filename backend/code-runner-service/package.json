@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"nodemon -r dotenv/config src/index.js\" \"nodemon -r dotenv/config worker/worker.js\"",
+    "dev": "concurrently \"nodemon -r dotenv/config src/index.js\" \"nodemon -r dotenv/config src/worker/worker.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
