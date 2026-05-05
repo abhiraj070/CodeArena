@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js"
 import {io} from "../app.js"
 import { User } from "../models/user.model.js"
-import { client } from "../redis/redis.js"
+import { redis } from "../redis/redis.js"
 import axios from 'axios'
 import * as Y from "yjs"
 
@@ -43,7 +43,7 @@ const initializeIO= ()=>{
         console.log("user",userId);
         
         await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
-        const storedMessage= await client.lrange(`stored-chat-message:${userId}`,0,-1)
+        const storedMessage= await redis.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
                 const parse=[]
                 for (const msg of storedMessage) {
@@ -192,7 +192,7 @@ const initializeIO= ()=>{
             console.log("disconnected: ",reason);
             
             const userInfo = socketToUser[socket.id]
-            if (userInfo) {
+            if (userInfo && userInfo.id && userInfo.username && userInfo.roomId) {
                 const { id, username, roomId } = userInfo
                 
                 if (rooms[roomId]) {
@@ -207,8 +207,9 @@ const initializeIO= ()=>{
                     }
                 }
                 
-                delete socketToUser[socket.id]
             }
+            delete socketToUser[socket.id]
+            console.log("deleted socket");
             
             for (const userId in userToSocket) {
                 if (userToSocket[userId] === socket.id) {
@@ -252,7 +253,7 @@ const initializeIO= ()=>{
                 io.to(userToSocket[receiver_id]).emit("receive-inchat-message",{message, senderId})
             }
             else{
-                await client.lpush(`stored-chat-message:${receiver_id}`,JSON.stringify({message, senderId}))
+                await redis.lpush(`stored-chat-message:${receiver_id}`,JSON.stringify({message, senderId}))
             }
         })
 

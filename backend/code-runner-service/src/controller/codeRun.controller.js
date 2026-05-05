@@ -3,14 +3,19 @@ import { queue } from "../queue/queue.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const pushCodeToQueue= asyncHandler(async (req,res) => {
-    const {code, language}= req.body
+    //console.log("34");
+    
+    const {code, language, roomId}= req.body
     const {ques_id}= req.params
     const {type}= req.query
-    queue.add("execute-code",{
+    console.log("adding the task in queue");
+    
+    await queue.add("execute-code",{
         code,
         language,
         ques_id,
-        type
+        type,
+        roomId
     })  
     return res
     .status(200)

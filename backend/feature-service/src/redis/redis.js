@@ -1,23 +1,23 @@
 import Redis from 'ioredis'
 
-let client= null
+let redis= null
 
 async function connectRedis(){
-    if(!client){
-        client=new Redis({
+    if(!redis){
+        redis=new Redis({
             host: "127.0.0.1",
             port: 6379
         })
 
-        client.on("connect",()=>{
+        redis.on("connect",()=>{
             console.log("redis connected");
         })
 
-        client.on("error",(error)=>{
+        redis.on("error",(error)=>{
             console.error("redis error: ",error);
         })
     }
 }
 
 
-export {connectRedis, client}
+export {connectRedis, redis}

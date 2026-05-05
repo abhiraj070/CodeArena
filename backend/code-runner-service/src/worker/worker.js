@@ -51,7 +51,7 @@ async function createSubmission(code, language_id, input){
 }
 
 
-async function runCdoe(code, input, language){
+async function runCode(code, input, language){
     const language_id= LANGUAGE_MAP[language]
     const token= await createSubmission(code, language_id, input)
     const result= await getResult(token)
@@ -82,6 +82,8 @@ async function executeCode(code, language, question, type){
                     passed: true
                 }
     for(const tc of testCases){
+        console.log("execute runCode");
+        
         const res= await runCode(code, tc.input, language)
         const expected= tc.output
 
@@ -108,10 +110,13 @@ async function executeCode(code, language, question, type){
 }
 
 const worker= new Worker("code-execution",async (job)=>{
-    const {code, language, ques_id, type}= job.data
-    const question= await axios.get(`/getAQuestion/${ques_id}`)
+    const {code, language, ques_id, type, roomId}= job.data
+    console.log("reached worker");
+    
+    const question= await axios.get(`/feature/v1/question/getAQuestion/${ques_id}`)
+    console.log("executing execute code");
     const result = await executeCode(code, language, question, type)
-    await client.publish("code-result", JSON.stringify(result))
+    await client.publish("code-result", JSON.stringify({result,roomId}))
 },
 {
     connection: {

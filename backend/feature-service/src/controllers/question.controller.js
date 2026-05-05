@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Questions } from "../models/question.model.js";
-import { client } from "../redis/redis.js";
+import { redis } from "../redis/redis.js";
 import { rooms } from "../socket/socket.js";
 
 const REDIS_TTL_SECONDS = 60;
@@ -19,8 +19,8 @@ const getAllQuestion= asyncHandler(async (req,res) => {
         throw new ApiError(400, "limit must be greater than 0")
     }
     if(cursor==null){
-        const cachedValue= await client.get("startingQuestions")
-        const startCursor= await client.get("startCursor")
+        const cachedValue= await redis.get("startingQuestions")
+        const startCursor= await redis.get("startCursor")
         //console.log(13);
         //console.log("cachedCursor",startCursor);
         
@@ -52,8 +52,8 @@ const getAllQuestion= asyncHandler(async (req,res) => {
 
     
     if(!cursor){
-        await client.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
-        await client.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
+        await redis.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
+        await reids.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
 
     }
     return res
@@ -89,7 +89,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(!ques_id){
         throw new ApiError(400, "Question id is required")
     }
-    const cachedValue= await client.get(`${user._id}:Question:${ques_id}`)
+    const cachedValue= await redis.get(`${user._id}:Question:${ques_id}`)
     if(cachedValue){
         return res
         .status(200)
@@ -99,7 +99,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(!question){
         throw new ApiError(404, "Question not found")
     }
-    await client.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", REDIS_TTL_SECONDS)
+    await redis.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", REDIS_TTL_SECONDS)
     
     return res
     .status(200)

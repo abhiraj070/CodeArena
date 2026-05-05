@@ -67,6 +67,10 @@ export default function QuestionPage() {
   const copyTimeoutRef= useRef(null)
   const hydrationRef = useRef(true)
   const location =useLocation()
+  const consoleHeightRef = useRef(140)
+  const sectionRef = useRef(null)
+  const [consoleHeight, setConsoleHeight] = useState(140)
+  const [consoleLoading, setConsoleLoading] = useState(false)
 
   const alreadyJoined = location.state?.alreadyJoined ?? false
   useEffect(()=>{
@@ -310,7 +314,29 @@ export default function QuestionPage() {
     socket.emit("leave-room",{roomId, id: user._id})
   }
 
+  useEffect(()=>{
+    socket.on("code-result",({result})=>{
+      console.log(result);
+      
+    })
+  },[])
 
+  const handleRunCode= async()=>{
+    setConsoleLoading(true)
+    try {
+      console.log("sending code for test");
+      
+      await axios.post(`/codeRun/v1/codeRunner/run/${id}?type=Run`, {
+        language,
+        code: yText.toString(),
+        roomId
+      })
+    } catch (error) {
+      console.error("Run failed", error)
+    } finally {
+      setConsoleLoading(false)
+    }
+  }
 
    
 
@@ -320,6 +346,28 @@ export default function QuestionPage() {
         <p className="text-sm text-muted-foreground">Loading question...</p>
       </div>
     )
+  }
+
+  const handleConsoleResizeStart = (event) => {
+    event.preventDefault()
+    const startY = event.clientY
+    const startHeight = consoleHeightRef.current
+    const maxHeight = Math.floor((sectionRef.current?.clientHeight ?? 0) * 0.45) || 360
+
+    const handleMove = (moveEvent) => {
+      const delta = startY - moveEvent.clientY
+      const nextHeight = Math.max(110, Math.min(startHeight + delta, maxHeight))
+      consoleHeightRef.current = nextHeight
+      setConsoleHeight(nextHeight)
+    }
+
+    const handleUp = () => {
+      document.removeEventListener("mousemove", handleMove)
+      document.removeEventListener("mouseup", handleUp)
+    }
+
+    document.addEventListener("mousemove", handleMove)
+    document.addEventListener("mouseup", handleUp)
   }
 
   return (
@@ -358,45 +406,76 @@ export default function QuestionPage() {
       </header>
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
-        <section className="overflow-y-auto border-b border-border p-6 md:border-b-0 md:border-r">
-          <div className="mb-3 flex items-center gap-2">
+        <section ref={sectionRef} className="relative overflow-hidden border-b border-border p-0 md:border-b-0 md:border-r">
+          <div className="h-full overflow-y-auto p-6">
+            <div className="mb-3 flex items-center gap-2">
             <h2 className="text-lg font-semibold">{question.title}</h2>
+            </div>
+
+            <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Description
+            </h3>
+            <p className="mb-5 text-sm leading-relaxed text-foreground/90">{question.description}</p>
+
+            {question.visibleTestCases && (
+              <>
+                <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Example
+                </h3>
+                {question.visibleTestCases.map((tc, index) => (
+                  <pre
+                    key={tc._id ?? `${tc.input}-${tc.output}-${index}`}
+                    className="mb-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground"
+                  >
+                    <span className="text-muted-foreground">Input:  </span>
+                    {tc.input}
+                    {"\n"}
+                    <span className="text-muted-foreground">Output: </span>
+                    <span className="text-primary">{tc.output}</span>
+                  </pre>
+                ))}
+
+              </>
+            )}
+
+            <h3 className="mb-1.5 mt-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Constraints
+            </h3>
+            <ul className="list-inside list-disc space-y-1 text-sm text-foreground/80">
+              <li>1 ≤ n ≤ 10⁵</li>
+              <li>−10⁹ ≤ values ≤ 10⁹</li>
+              <li>Solution must run within the time limit</li>
+            </ul>
           </div>
 
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Description
-          </h3>
-          <p className="mb-5 text-sm leading-relaxed text-foreground/90">{question.description}</p>
-
-          {question.visibleTestCases && (
-            <>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Example
-              </h3>
-              {question.visibleTestCases.map((tc, index) => (
-                <pre
-                  key={tc._id ?? `${tc.input}-${tc.output}-${index}`}
-                  className="mb-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground"
-                >
-                  <span className="text-muted-foreground">Input:  </span>
-                  {tc.input}
-                  {"\n"}
-                  <span className="text-muted-foreground">Output: </span>
-                  <span className="text-primary">{tc.output}</span>
-                </pre>
-              ))}
-              
-            </>
-          )}
-
-          <h3 className="mb-1.5 mt-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Constraints
-          </h3>
-          <ul className="list-inside list-disc space-y-1 text-sm text-foreground/80">
-            <li>1 ≤ n ≤ 10⁵</li>
-            <li>−10⁹ ≤ values ≤ 10⁹</li>
-            <li>Solution must run within the time limit</li>
-          </ul>
+          <div className="absolute bottom-0 left-0 right-0 border-t border-border bg-muted/40 text-xs text-muted-foreground shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.4)]">
+            <div className="relative flex items-center justify-between px-4 py-2">
+              <button
+                type="button"
+                aria-label="Resize console"
+                onMouseDown={handleConsoleResizeStart}
+                className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 cursor-row-resize rounded-full border border-border/70 bg-background/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80 shadow-sm"
+              >
+                Drag
+              </button>
+              <span className="text-primary">●</span>
+              <span className="text-xs text-muted-foreground">Console output</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">Resize up</span>
+            </div>
+            <div
+              style={{ height: consoleHeight }}
+              className="overflow-auto border-t border-border/60 bg-background/80 px-4 py-3 font-mono text-[11px] leading-5 text-foreground/80"
+            >
+              {consoleLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary/40 border-t-primary" />
+                  Running...
+                </div>
+              ) : (
+                "Console output will appear here."
+              )}
+            </div>
+          </div>
         </section>
 
         <section className="flex flex-col overflow-hidden bg-[oklch(0.13_0_0)]">
@@ -427,15 +506,12 @@ export default function QuestionPage() {
             />
           </div>
 
-          <div className="border-t border-border/60 bg-[oklch(0.18_0_0)] px-3 py-2 text-xs text-muted-foreground">
-            <span className="text-primary">●</span> Console output will appear here.
-          </div>
-
           <div className="flex items-center justify-end gap-2 border-t border-border/60 bg-[oklch(0.18_0_0)] px-3 py-2.5">
             <Button
               size="sm"
               variant="outline"
               className="h-8 gap-1.5 border-border/60 bg-transparent hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
+              onClick={handleRunCode}
             >
               <Play className="h-3.5 w-3.5" /> Run
             </Button>

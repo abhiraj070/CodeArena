@@ -27,7 +27,7 @@ const userSchema= Schema({
     language:{
         type: String,
         enum: ["javascript", "python", "cpp", "java", "typescript"],
-        default: "javascript"
+        default: "cpp"
     },
     isOnline:{
         type: Boolean,

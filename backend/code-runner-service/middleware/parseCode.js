@@ -1,5 +1,5 @@
-import { ApiError } from "../src/utils/ApiError";
-import { asyncHandler } from "../src/utils/asyncHandler";
+import { ApiError } from "../src/utils/ApiError.js";
+import { asyncHandler } from "../src/utils/asyncHandler.js";
 
 const parseCode= asyncHandler((req,res,next)=>{
     if(!req?.body?.language){

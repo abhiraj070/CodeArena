@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon -r dotenv/config src/index.js",
+    "dev": "concurrently \"nodemon -r dotenv/config src/index.js\" \"nodemon -r dotenv/config worker/worker.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,5 +19,8 @@
     "ioredis": "^5.10.1",
     "nodemon": "^3.1.14"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
