@@ -55,9 +55,10 @@ export default function QuestionPage() {
 
   const [question, setQuestion] = useState(null)
   const { id } = useParams();
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("cpp");
   const [searchParams]= useSearchParams()
-  const roomId = searchParams.get("roomId")
+  const rawRoomId = searchParams.get("roomId")
+  const roomId = rawRoomId && rawRoomId !== "null" && rawRoomId !== "undefined" ? rawRoomId : null
   const {user}= useUser()
   const socket = useSocket()
   const [code, setCode] = useState("");
@@ -84,7 +85,8 @@ export default function QuestionPage() {
     setCode(STARTER_CODE[val]);
   };
 
-
+  console.log(id)
+  
   useEffect(() => {
     if(alreadyJoined) return
     if (!socket || !roomId || !user?._id) return
@@ -110,6 +112,7 @@ export default function QuestionPage() {
 
 
 
+  
   // YJS
 
   if(!ydocRef.current){ //ydocRef pura yjs document hai jisme 2 chize hoti hai ydoc and ytext. ydoc is unique per user.
@@ -120,8 +123,24 @@ export default function QuestionPage() {
   useEffect(()=>{
     const fetchQuestion=async ()=>{
       try {
-        
-        if (id && id !== "null" && id !== "undefined") {
+
+        if (!roomId && id) {
+          const res = await axios.get(`/feature/v1/question/getAQuestion/${id}`)
+          setQuestion(res.data.data)
+          setCode(STARTER_CODE[language])
+          return
+        }
+
+        if(!question && roomId){
+          const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
+          //console.log("got question from roomid");
+          //console.log("ques:",res.data.data.question);
+          setQuestion( res.data.data.question)
+          setCode(STARTER_CODE[language])
+          return
+        }
+
+        if (id && roomId) {
           //console.log("19 — treating id as valid", id);
           console.log("roomid:",roomId,"id:",id);
           
@@ -129,21 +148,13 @@ export default function QuestionPage() {
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
           hydrationRef.current = true
-          setCode(res.data.data.code)
+          setCode(STARTER_CODE[language])
           return
         }
 
-        if (!roomId) {
-          return
-        }
+        
         console.log("code sync and question featch start");
-        if(!question){
-          const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
-          //console.log("got question from roomid");
-          //console.log("ques:",res.data.data.question);
-          setQuestion( res.data.data.question)
-          setCode(res.data.data.code)
-        }
+        
         hydrationRef.current = true
         console.log("code synced");
         

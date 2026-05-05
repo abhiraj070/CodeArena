@@ -215,7 +215,7 @@ const getQuestionById = asyncHandler(async (req, res) => {
     if (!ques_id) {
         throw new ApiError(400, "Question id is required")
     }
-    const question = await Questions.findById(ques_id).select("visibleTestCases hiddenTestCases ")
+    const question = await Questions.findById(ques_id)
     if (!question) {
         throw new ApiError(404, "Question not found")
     }

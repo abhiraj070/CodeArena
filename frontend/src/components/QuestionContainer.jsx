@@ -235,7 +235,7 @@ export function QuestionContainer({questionAdded}) {
                   <span className="text-xs text-muted-foreground tabular-nums">{i + 1}.</span>
                   <Circle className={`mt-1 h-3.5 w-3.5 self-start ${getDifficultyDotColor(q?.difficulty)}`} />
                   <div className="min-w-0">
-                    <Link to={`/question/${q._id}`} className="block">
+                    <Link to={`/question/${q._id}?roomId=null`} className="block">
                       <p className="truncate text-sm font-medium text-foreground hover:underline">
                         {q.title}
                       </p>
