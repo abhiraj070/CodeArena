@@ -208,7 +208,7 @@ const updatePreferredLanguage = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         { language: normalizedLanguage },
-        { returnDocument: true}
+        { new: true }
     ).select("-password -refreshToken")
 
     if(!updatedUser){
@@ -300,7 +300,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         updatePayload,
-        { returnDocument: true }
+        { new: true }
     ).select("-password -refreshToken")
 
     return res
@@ -331,7 +331,7 @@ const updateUserOnlineStatus = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         { isOnline },
-        { returnDocument: true }
+        { new: true }
     ).select("-password -refreshToken")
 
     if(!updatedUser){

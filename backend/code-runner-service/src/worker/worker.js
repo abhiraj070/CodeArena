@@ -36,27 +36,24 @@ async function getResult(token){
     }
 }
 
-try {
-    const res = await axios.post(
-        "https://judge0-ce.p.rapidapi.com/submissions",
+async function createSubmission(code, language_id, input){
+    const res= await axios.post("https://judge0-ce.p.rapidapi.com/submissions",
         {
-            source_code: "print('hello')",
-            language_id: 71,
-            stdin: ""
+            source_code: code,
+            language_id,
+            stdin: input
         },
         {
             headers: {
                 "Content-Type": "application/json",
-                "X-RapidAPI-Key": "YOUR_KEY_HERE",
+                "X-RapidAPI-Key": process.env.RAPIDAPI,
                 "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
             }
         }
-    );
-    console.log("SUCCESS:", res.data);
-} catch (err) {
-    console.error("STATUS:", err.response?.status);
-    console.error("DATA:", err.response?.data);
-    console.error("MESSAGE:", err.message);
+    )
+    console.log(res);
+    
+    return res.data.token
 }
 
 

@@ -20,8 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select.jsx";
 import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
+import { ArenaInvitePanel } from "@/components/ArenaInvitePanel.jsx";
 import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
-import { ArrowLeft, Code2, Copy, Play, Send } from "lucide-react";
+import { ArrowLeft, Check, Code2, Copy, Play, Send, UserPlus } from "lucide-react";
 import axios from "axios";
 import { useUser } from "@/context/user.context.jsx"; 
 import { MonacoBinding } from "y-monaco"; //binds yjs and monaco
@@ -72,6 +73,7 @@ export default function QuestionPage() {
   const sectionRef = useRef(null)
   const [consoleHeight, setConsoleHeight] = useState(140)
   const [consoleLoading, setConsoleLoading] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   const alreadyJoined = location.state?.alreadyJoined ?? false
   useEffect(()=>{
@@ -325,6 +327,26 @@ export default function QuestionPage() {
     socket.emit("leave-room",{roomId, id: user._id})
   }
 
+  const handleArenaInvite = async ({ receiver, message, code }) => {
+    if (!user || !receiver || !message) return
+    const text = code ? `${message} Session code: ${code}` : message
+    try {
+      await axios.post("/feature/v1/message/sendMessage", {
+        message: text,
+        personA: user._id,
+        personB: receiver._id,
+      })
+      socket.emit("in-chat-message", {
+        message: text,
+        receiver_id: receiver._id,
+        senderId: user._id,
+      })
+    } catch (error) {
+      console.error("Failed to send arena invite", error)
+      throw error
+    }
+  }
+
   useEffect(()=>{
     socket.on("code-result",({result})=>{
       console.log(result);
@@ -400,21 +422,45 @@ export default function QuestionPage() {
         </div>
         {roomId && (
           <div className="flex items-center gap-2">
-            <span className="rounded-md border border-primary/50 bg-primary/15 px-3 py-1.5 text-sm font-semibold text-primary sm:text-base">
-              Arena ID: {roomId}
-            </span>
+            <div className="flex h-8 items-center overflow-hidden rounded-md border border-primary/40 bg-primary/10">
+              <span className="px-3 text-xs font-medium text-primary/80 sm:text-sm">
+                Arena ID
+              </span>
+              <span className="border-l border-primary/30 px-3 font-mono text-xs font-semibold tracking-wider text-primary sm:text-sm">
+                {roomId}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyArenaId}
+                aria-label={copied ? "Copied" : "Copy arena ID"}
+                title={copied ? "Copied" : "Copy arena ID"}
+                className="flex h-full w-8 items-center justify-center border-l border-primary/30 text-primary/70 transition hover:bg-primary/15 hover:text-primary"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
             <Button
               size="sm"
-              variant="outline"
-              onClick={handleCopyArenaId}
-              className="h-8 gap-1.5 border-primary/50 bg-primary/10 text-primary hover:bg-primary/20"
+              onClick={() => setInviteOpen(true)}
+              className="h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Copy className="h-3.5 w-3.5" />
-              {copied ? "Copied" : "Copy"}
+              <UserPlus className="h-3.5 w-3.5" />
+              Invite
             </Button>
           </div>
         )}
       </header>
+
+      <ArenaInvitePanel
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        roomId={roomId}
+        onSendInvite={handleArenaInvite}
+      />
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
         <section ref={sectionRef} className="relative overflow-hidden border-b border-border p-0 md:border-b-0 md:border-r">

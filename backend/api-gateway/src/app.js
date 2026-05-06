@@ -24,7 +24,7 @@ const proxyOptions_feature_service={
         return req.originalUrl.replace(/^\/feature/,"/api")
     },
     proxyErrorHandler:(err, res, next)=>{
-        console.error("proxy error: ",err.message);
+        console.error("proxy error2: ",err.message);
         return res.
         status(500)
         .json(new ApiResponse(500,{},"error in proxy"))
