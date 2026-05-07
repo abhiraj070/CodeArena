@@ -165,11 +165,12 @@ const initializeIO= ()=>{
         })
 
         //send message to room
-        socket.on("in-meeting-message",({roomId, username, message})=>{
+        socket.on("in-meeting-message",({roomId, user, message})=>{
             if(!rooms[roomId]){
                 return new ApiError(404,"roomId not found")
             }
-            io.to(`${roomId}`).emit("received-message",{message, username})
+            redis.rpush(`in-meeting-message:${roomId}`,{user, message})
+            socket.to(`${roomId}`).emit("in-meeting-message-receive",{message, user})
         })
 
         socket.on("leave-room",({roomId, id})=>{
@@ -238,12 +239,11 @@ const initializeIO= ()=>{
         socket.on("in-chat-message",async({message,receiver_id,senderId})=>{
                 console.log("emiting the message to the receiver");
                 //console.log("reveiver:",receiver_id);
-                console.log("users registered");
-                
-                for(const u in userToSocket){
-                    console.log(u);
+                // console.log("users registered");
+                // for(const u in userToSocket){
+                //     console.log(u);
                     
-                }
+                // }
                 console.log(userToSocket[receiver_id]);
                 
             if(userToSocket[receiver_id]){
@@ -256,6 +256,16 @@ const initializeIO= ()=>{
                 await redis.lpush(`stored-chat-message:${receiver_id}`,JSON.stringify({message, senderId}))
             }
         })
+
+        socket.on("Get-Chats", async({roomId})=>{
+            const {message, user}= await redis.lrange(`in-meeting-message:${roomId}`,0,-1)
+            if(!message) return
+            console.log("chat opened so sending chats");
+            
+            
+            socket.emit(`Get-chat-receive`,{message, user})
+        })
+        
 
         socket.on("request-yjs-state", ({ roomId }) => {
             const room = rooms[roomId]
@@ -285,6 +295,8 @@ const initializeIO= ()=>{
             room.state = Y.encodeStateAsUpdate(room.ydoc);
             socket.to(roomId).emit("yjs-update-receive", normalizedUpdate);
         })
+
+
 
     })
 }
