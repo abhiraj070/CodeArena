@@ -2,6 +2,7 @@ import { ApiError } from "../utils/ApiError.js"
 import {io} from "../app.js"
 import { User } from "../models/user.model.js"
 import { redis } from "../redis/redis.js"
+import { fetchUserById } from "../controllers/user.controller.js"
 import axios from 'axios'
 import * as Y from "yjs"
 
@@ -240,10 +241,6 @@ const initializeIO= ()=>{
                 console.log("emiting the message to the receiver");
                 //console.log("reveiver:",receiver_id);
                 // console.log("users registered");
-                // for(const u in userToSocket){
-                //     console.log(u);
-                    
-                // }
                 console.log(userToSocket[receiver_id]);
                 
             if(userToSocket[receiver_id]){
@@ -261,9 +258,38 @@ const initializeIO= ()=>{
             const {message, user}= await redis.lrange(`in-meeting-message:${roomId}`,0,-1)
             if(!message) return
             console.log("chat opened so sending chats");
-            
-            
             socket.emit(`Get-chat-receive`,{message, user})
+        })
+
+        socket.on("get-chat-people",async ({roomId})=>{
+            //console.log("joines",rooms[roomId]);
+            console.log("received users request");
+            
+            const people = rooms[roomId]?.users || []
+            const toDisplayUser = []
+            const cachedProfiles = await redis.lrange(`inchatprofiles:${roomId}`,0,-1) || []
+            const parsedCachedProfiles = cachedProfiles
+                .map((item) => {
+                    return JSON.parse(item)
+                })
+
+            console.log("chachedProfile:",parsedCachedProfiles);
+            
+            if(parsedCachedProfiles.length === 0){
+                for(const user of people){
+                    const userId = user.Id
+                    const u = await fetchUserById(userId)
+                    if(u){
+                        toDisplayUser.push(u)
+                    }
+                }
+                if(toDisplayUser.length > 0){
+                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)))
+                }
+            }
+            console.log("emiting the userlist");
+            //console.log("people:",toDisplayUser, parsedCachedProfiles);
+            socket.emit("get-chat-people-receive",{people: toDisplayUser.length===0? parsedCachedProfiles : toDisplayUser})
         })
         
 

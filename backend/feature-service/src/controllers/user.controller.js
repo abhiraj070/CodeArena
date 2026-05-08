@@ -120,6 +120,17 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user }, "User fetched successfully"))
 })
 
+const fetchUserById = async (userId) => {
+    if(!userId) return null
+    if(!mongoose.Types.ObjectId.isValid(userId)) return null
+
+    const user = await User.findById(userId)
+        .select("-password -refreshToken")
+        .lean()
+
+    return user || null
+}
+
 const getUserById = asyncHandler(async (req, res) => {
     const { id } = req.params
 
@@ -343,4 +354,5 @@ const updateUserOnlineStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: updatedUser }, "User online status updated successfully"))
 })
 
-export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, getChatsWithUsers, updatePreferredLanguage, updateProfile, updateUserOnlineStatus, getUserById}
+export {register, login, pastConnectedUsers, getUserByUsername, getRecentlyConnectedUsers, getChatsWithUsers, 
+    updatePreferredLanguage, updateProfile, updateUserOnlineStatus, getUserById, fetchUserById}

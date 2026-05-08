@@ -82,6 +82,7 @@ export default function QuestionPage() {
   const [roomMessages, setRoomMessages] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [roomProfiles, setRoomProfiles] = useState({})
+  const [peopleOpen, setPeopleOpen] = useState(false)
   const chatBottomRef = useRef(null)
 
   const alreadyJoined = location.state?.alreadyJoined ?? false
@@ -336,7 +337,7 @@ export default function QuestionPage() {
 
   useEffect(()=>{
     if(!roomId) return
-    socket.on("Get-chat-receive",({message, user})=>{
+    const handler= ({message, user})=>{
       const entry = {
         id: crypto.randomUUID(),
         message,
@@ -344,7 +345,12 @@ export default function QuestionPage() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       }
       setRoomMessages(entry)
-    })
+    }
+    socket.on("Get-chat-receive", handler)
+
+    return ()=>{
+      socket.off("Get-chat-receive", handler)
+    }
   },[])
 
 
@@ -374,27 +380,30 @@ export default function QuestionPage() {
   }
 
   useEffect(()=>{
-    socket.on("code-result",({result})=>{
+    const handler= ({result})=>{
       console.log(result);
-      
-    })
+    }
+    socket.on("code-result", handler)
+    return ()=>{
+      socket.off("code-result", handler)
+    }
   },[])
 
 
   useEffect(() => {
-    if (!user?.username) return
-    setRoomProfiles((prev) => {
-      if (prev[user.username]) return prev
-      return {
-        ...prev,
-        [user.username]: {
-          username: user.username,
-          fullName: user.fullName,
-          profilePicture: user.profilePicture,
-        },
-      }
-    })
-  }, [user?.username, user?.fullName, user?.profilePicture])
+    if(!roomId) return
+
+    const handler= ({people})=>{
+      console.log("got the user list");
+      console.log("people:",people);
+      
+      setRoomProfiles(people)
+    }
+    socket.on(`get-chat-people-receive`,handler)
+    return ()=>{
+      socket.off(`get-chat-people-receive`,handler)
+    }
+  }, [])
 
   useEffect(() => {
     if (!socket || !roomId) return
@@ -427,6 +436,17 @@ export default function QuestionPage() {
     if (!chatOpen) return
     setUnreadCount(0)
   }, [chatOpen])
+
+  useEffect(() => {
+    if (!peopleOpen) return
+    const handleOutside = (event) => {
+      if (!event.target.closest("[data-people-panel]")) {
+        setPeopleOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleOutside)
+    return () => document.removeEventListener("mousedown", handleOutside)
+  }, [peopleOpen])
 
   useEffect(() => {
     if (!chatOpen) return
@@ -514,9 +534,16 @@ export default function QuestionPage() {
     socket.emit("Get-Chats",{roomId});
   }  
 
+  const handlePeopleClick= ()=>{
+    setPeopleOpen((prev) => !prev)
+    console.log("req to get users list is emitted");
+    
+    socket.emit("get-chat-people",{roomId})
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="flex h-14 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur">
+      <header className="relative z-50 flex h-14 items-center justify-between border-b border-border bg-background/85 px-4 backdrop-blur">
         <div className="flex items-center gap-3">
           <Link
             to="/"
@@ -568,6 +595,79 @@ export default function QuestionPage() {
                 </span>
               )}
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePeopleClick}
+              className="relative h-8 gap-1.5 border-border/60 bg-background/40 hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              People
+            </Button>
+            <div
+              data-people-panel
+              className={cn(
+                "absolute right-4 top-16 z-50 w-[min(320px,calc(100%-2rem))] overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-2xl shadow-black/40 backdrop-blur transition-all duration-200",
+                peopleOpen ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
+              )}
+              role="dialog"
+              aria-modal="false"
+              aria-label="Room participants"
+            >
+              <div className="flex items-center justify-between border-b border-border bg-background/50 px-4 py-3">
+                <div>
+                  <h3 className="text-sm font-semibold">People in room</h3>
+                  <p className="text-[11px] text-muted-foreground">Active profiles in this arena.</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setPeopleOpen(false)}
+                  aria-label="Close people list"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="max-h-[45vh] overflow-y-auto px-4 py-4">
+                {Object.values(roomProfiles).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <UserPlus className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-medium">No users yet</p>
+                    <p className="text-xs text-muted-foreground">Invite teammates to join this arena.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.values(roomProfiles).map((profile) => {
+                      const displayName = profile.fullName || profile.username || "Unknown"
+                      const initials = (displayName || "?").slice(0, 2).toUpperCase()
+
+                      return (
+                        <div
+                          key={profile.username}
+                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/50 px-3 py-2"
+                        >
+                          <Avatar className="h-9 w-9 ring-2 ring-background">
+                            <AvatarImage src={profile.profilePicture || ""} alt={displayName} />
+                            <AvatarFallback className="bg-primary/20 text-xs font-semibold text-primary">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {displayName}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">@{profile.username}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
             <Button
               size="sm"
               onClick={() => setInviteOpen(true)}
