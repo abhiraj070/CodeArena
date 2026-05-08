@@ -161,7 +161,7 @@ export function QuestionContainer({questionAdded}) {
         "create-room",
         { roomId, username: `${user.username}`, id: user._id, questionId, code },
         
-          navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`)
+          navigate(`/question/${questionId}?roomId=${encodeURIComponent(roomId)}`,{ state: { alreadyJoined: true }})
       )
       console.log("arena created")
 

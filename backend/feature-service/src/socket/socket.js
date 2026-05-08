@@ -170,7 +170,7 @@ const initializeIO= ()=>{
             if(!rooms[roomId]){
                 return new ApiError(404,"roomId not found")
             }
-            redis.rpush(`in-meeting-message:${roomId}`,{user, message})
+            redis.rpush(`in-meeting-message:${roomId}`,{user, message},"EX",36000)
             socket.to(`${roomId}`).emit("in-meeting-message-receive",{message, user})
         })
 
@@ -245,7 +245,7 @@ const initializeIO= ()=>{
                 
             if(userToSocket[receiver_id]){
                     console.log("message emited to the receiver");
-                    console.log("Sending senderId:", senderId);
+                    //console.log("Sending senderId:", senderId);
                     
                 io.to(userToSocket[receiver_id]).emit("receive-inchat-message",{message, senderId})
             }
@@ -284,7 +284,7 @@ const initializeIO= ()=>{
                     }
                 }
                 if(toDisplayUser.length > 0){
-                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)))
+                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)),"EX",15)
                 }
             }
             console.log("emiting the userlist");
