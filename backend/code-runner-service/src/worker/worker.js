@@ -12,7 +12,7 @@ const LANGUAGE_MAP = {
 };
 
 const api= axios.create({
-    baseURL:"http://localhost:8003"
+    baseURL: process.env.BASE_URL
 })
 
 async function getResult(token){
@@ -37,20 +37,26 @@ async function getResult(token){
 }
 
 async function createSubmission(code, language_id, input){
-    const res= await axios.post("https://judge0-ce.p.rapidapi.com/submissions",
-        {
-            source_code: code,
-            language_id,
-            stdin: input
-        },
-        {
-            headers: {
-                "Content-Type": "application/json",
-                "X-RapidAPI-Key": process.env.RAPIDAPI,
-                "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+    try {
+        const res= await axios.post("https://judge0-ce.p.rapidapi.com/submissions",
+            {
+                source_code: code,
+                language_id,
+                stdin: input
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-RapidAPI-Key": process.env.RAPIDAPI,
+                    "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
+                }
             }
-        }
-    )
+        )
+    } catch (error) {
+        console.log(error.response.status);
+        console.log(error.response.data);
+        
+    }
     console.log(res);
     
     return res.data.token
@@ -75,6 +81,8 @@ async function runCode(code, input, language){
 
 
 async function executeCode(code, language, question, type){
+    console.log("reached execute code");
+    
     let testCases
     if(type==="Submit"){
         testCases = question.hiddenTestCases
@@ -123,7 +131,7 @@ const worker= new Worker("code-execution",async (job)=>{
     const {code, language, ques_id, type, roomId}= job.data
     console.log("reached worker");
     
-    const response= await api.get(`/feature/v1/question/getAQuestion/${ques_id}`)
+    const response= await api.get(`/api/v1/question/getAQuestion/${ques_id}`)
     const question= response.data.data
     //console.log("question:",question.hiddenTestCases);
     

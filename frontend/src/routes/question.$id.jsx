@@ -90,15 +90,8 @@ export default function QuestionPage() {
     setLanguage(user.language)
   },[])
 
-  const onLanguageChange = (val) => {
-    setLanguage(val);
-    hydrationRef.current= true
-    //console.log(99);
-    setCode(STARTER_CODE[val]);
-  };
 
-  //console.log(id)
-  
+  // initial join room emit if not already joined
   useEffect(() => {
     if(alreadyJoined) return
     if (!socket || !roomId || !user?._id) return
@@ -126,7 +119,6 @@ export default function QuestionPage() {
 
   
   // YJS
-
   if(!ydocRef.current){ //ydocRef pura yjs document hai jisme 2 chize hoti hai ydoc and ytext. ydoc is unique per user.
     const {ydoc, yText}=createYjsDoc()
     ydocRef.current= {ydoc,yText}
@@ -135,7 +127,6 @@ export default function QuestionPage() {
   useEffect(()=>{
     const fetchQuestion=async ()=>{
       try {
-
         if (!roomId && id) {
           const res = await axios.get(`/feature/v1/question/getAQuestion/${id}`)
           setQuestion(res.data.data)
@@ -155,7 +146,6 @@ export default function QuestionPage() {
         if (id && roomId) {
           //console.log("19 — treating id as valid", id);
           console.log("roomid:",roomId,"id:",id);
-          
           const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
@@ -164,15 +154,12 @@ export default function QuestionPage() {
           return
         }
 
-        
         console.log("code sync and question featch start");
-        
         hydrationRef.current = true
         console.log("code synced");
         
       } catch (error) {
         console.error("error while fetching question",error);
-        
       }
     }
     fetchQuestion()
@@ -180,7 +167,6 @@ export default function QuestionPage() {
 
   
   const ydoc= useMemo(()=>ydocRef.current.ydoc,[])
-
   const yText= useMemo(()=>ydocRef.current.yText,[]) 
 
   useEffect(() => {
@@ -226,7 +212,7 @@ export default function QuestionPage() {
     if (!roomId) return
     const handleLocalUpdate = (update, origin) => { //yjs gives a origin string which tells whether the change is local or from other user(remote). so if the change is fomrother user do not emit it back.
       if (origin === "remote" || origin === "hydrate") return
-      socket.emit("yjs-update", { update, roomId, fullText: yText.toString() })
+      socket.emit("yjs-update", { update, roomId })
     }
     //the origin thing is done because suppose form user B yjs/ydoc emits a update change and user A recives it and then applychanges, so technically yjs is updated again and can emit update again but using origin this could be stoped
     ydoc.on("update", handleLocalUpdate)
@@ -258,7 +244,7 @@ export default function QuestionPage() {
   }, [code, ydoc, yText, roomId])
 
   const handleEditorDidMount= (editor)=>{
-    bindingRef.current = new MonacoBinding( 
+    bindingRef.current = new MonacoBinding(  //MonacoBinding is the main connector between yjs and monaco. it bidirectionally updated yText and monaco text model 
       yText,
       editor.getModel(),
       new Set([editor]),
@@ -303,38 +289,8 @@ export default function QuestionPage() {
 
 
 
-  //COPY
 
-  const handleCopyArenaId = async () => {
-    if (!roomId) return
-
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(roomId)
-      } else {
-        const textarea = document.createElement("textarea")
-        textarea.value = roomId
-        textarea.setAttribute("readonly", "")
-        textarea.style.position = "absolute"
-        textarea.style.left = "-9999px"
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand("copy")
-        textarea.remove()
-      }
-
-      setCopied(true)
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current)
-      }
-      copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 1600)
-    } catch (error) {
-      console.error("Failed to copy arena ID", error)
-    }
-  }
-
-
-
+  // in-meeting chat
   useEffect(()=>{
     if(!roomId) return
     const handler= ({message, user})=>{
@@ -352,43 +308,6 @@ export default function QuestionPage() {
       socket.off("Get-chat-receive", handler)
     }
   },[])
-
-
-
-  const handleArenaLeave=()=>{
-    socket.emit("leave-room",{roomId, id: user._id})
-  }
-
-  const handleArenaInvite = async ({ receiver, message, code }) => {
-    if (!user || !receiver || !message) return
-    const text = code ? `${message} Session code: ${code}` : message
-    try {
-      await axios.post("/feature/v1/message/sendMessage", {
-        message: text,
-        personA: user._id,
-        personB: receiver._id,
-      })
-      socket.emit("in-chat-message", {
-        message: text,
-        receiver_id: receiver._id,
-        senderId: user._id,
-      })
-    } catch (error) {
-      console.error("Failed to send arena invite", error)
-      throw error
-    }
-  }
-
-  useEffect(()=>{
-    const handler= ({result})=>{
-      console.log(result);
-    }
-    socket.on("code-result", handler)
-    return ()=>{
-      socket.off("code-result", handler)
-    }
-  },[])
-
 
   useEffect(() => {
     if(!roomId) return
@@ -434,9 +353,37 @@ export default function QuestionPage() {
 
   useEffect(() => {
     if (!chatOpen) return
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [roomMessages, chatOpen])
+
+  useEffect(() => {
+    setRoomMessages([])
+    setUnreadCount(0)
+  }, [roomId])
+
+
+  
+
+  //code output handle
+  useEffect(()=>{
+    const handler= ({result})=>{
+      console.log(result);
+    }
+    socket.on("code-result", handler)
+    return ()=>{
+      socket.off("code-result", handler)
+    }
+  },[])
+
+  useEffect(() => {
+    if (!chatOpen) return
     setUnreadCount(0)
   }, [chatOpen])
 
+
+
+
+  // event handlers for output component resize
   useEffect(() => {
     if (!peopleOpen) return
     const handleOutside = (event) => {
@@ -448,15 +395,51 @@ export default function QuestionPage() {
     return () => document.removeEventListener("mousedown", handleOutside)
   }, [peopleOpen])
 
-  useEffect(() => {
-    if (!chatOpen) return
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [roomMessages, chatOpen])
 
-  useEffect(() => {
-    setRoomMessages([])
-    setUnreadCount(0)
-  }, [roomId])
+
+
+
+  const onLanguageChange = (val) => {
+    const newStarter = STARTER_CODE[val] ?? ""
+    setLanguage(val)
+    setCode(newStarter)
+    if (roomId) {
+      ydoc.transact(() => {
+        if (yText.length > 0) yText.delete(0, yText.length)
+        yText.insert(0, newStarter)
+      })
+    }
+  };
+
+  //COPY
+
+  const handleCopyArenaId = async () => {
+    if (!roomId) return
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(roomId)
+      } else {
+        const textarea = document.createElement("textarea")
+        textarea.value = roomId
+        textarea.setAttribute("readonly", "")
+        textarea.style.position = "absolute"
+        textarea.style.left = "-9999px"
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand("copy")
+        textarea.remove()
+      }
+
+      setCopied(true)
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 1600)
+    } catch (error) {
+      console.error("Failed to copy arena ID", error)
+    }
+  }
 
   const handleRoomSend = async () => {
     const trimmed = chatDraft.trim()
@@ -496,14 +479,25 @@ export default function QuestionPage() {
 
   
 
-   
 
-  if (!question) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading question...</p>
-      </div>
-    )
+  const handleArenaInvite = async ({ receiver, message, code }) => {
+    if (!user || !receiver || !message) return
+    const text = code ? `${message} Session code: ${code}` : message
+    try {
+      await axios.post("/feature/v1/message/sendMessage", {
+        message: text,
+        personA: user._id,
+        personB: receiver._id,
+      })
+      socket.emit("in-chat-message", {
+        message: text,
+        receiver_id: receiver._id,
+        senderId: user._id,
+      })
+    } catch (error) {
+      console.error("Failed to send arena invite", error)
+      throw error
+    }
   }
 
   const handleConsoleResizeStart = (event) => {
@@ -539,6 +533,20 @@ export default function QuestionPage() {
     console.log("req to get users list is emitted");
     
     socket.emit("get-chat-people",{roomId})
+  }
+
+  const handleArenaLeave=()=>{
+    socket.emit("leave-room",{roomId, id: user._id})
+  }
+
+
+
+  if (!question) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Loading question...</p>
+      </div>
+    )
   }
 
   return (
@@ -590,7 +598,7 @@ export default function QuestionPage() {
               <MessageSquare className="h-3.5 w-3.5" />
               Chat
               {unreadCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground shadow-sm">
                   {unreadCount}
                 </span>
               )}
@@ -834,7 +842,7 @@ export default function QuestionPage() {
           </div>
           
 
-          <div className="max-h-[55vh] min-h-[240px] overflow-y-auto px-4 py-4">
+          <div className="max-h-[55vh] min-h-60 overflow-y-auto px-4 py-4">
             {roomMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -877,7 +885,7 @@ export default function QuestionPage() {
                               : "rounded-bl-md border border-border/60 bg-muted text-foreground",
                           )}
                         >
-                          <p className="whitespace-pre-wrap break-words leading-relaxed">{item.message}</p>
+                          <p className="whitespace-pre-wrap wrap-break-words leading-relaxed">{item.message}</p>
                         </div>
                       </div>
                     </div>
@@ -915,21 +923,6 @@ export default function QuestionPage() {
       )}
     </div>
   );
-}
-
-function extFor(lang) {
-  switch (lang) {
-    case "javascript":
-      return "js";
-    case "typescript":
-      return "ts";
-    case "python":
-      return "py";
-    case "cpp":
-      return "cpp";
-    case "java":
-      return "java";
-  }
 }
 
 const editorOptions = {

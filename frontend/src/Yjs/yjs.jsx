@@ -9,6 +9,14 @@ export function createYjsDoc(){ //this is a factory function which creates a new
     return { ydoc, yText };
 
 }
+ //visualisation
+/*Suppose I have two clients connected to a editor and I have a server connected to both the clients. Now imagine this as I hand over a 
+ notebook(Y.doc), a separate notebook to each client and 1 to a server and told them to connect their notebooks to the 
+ Monaco editor(monacoBinding). Now when they edit something on their editor, Monaco model changes. Monaco model then updates this change 
+ to the y.text of yjs. When y.text is updated, it automatically triggers a Y.doc update, which is used to tell the server that there is 
+ some update in the y.text of client A. Then the update is sent to the server. On the server, the update is verified, That whether it a 
+ valid update or not. Then the update is updated to their notebook(their y.doc ). this y.doc was created just to sync the newly 
+ connected or rejoined users. then the updated is sent to the client A and there also the update is updated and hence the sync.*/
 
 //yjs flow
 

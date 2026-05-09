@@ -6,9 +6,6 @@ import { Questions } from "../models/question.model.js";
 import { redis } from "../redis/redis.js";
 import { rooms } from "../socket/socket.js";
 
-const REDIS_TTL_SECONDS = 60;
-
-
 const getAllQuestion= asyncHandler(async (req,res) => {
     console.log("starting to get all the question");
     
@@ -54,8 +51,8 @@ const getAllQuestion= asyncHandler(async (req,res) => {
 
     
     if(!cursor){
-        await redis.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", REDIS_TTL_SECONDS)
-        await redis.set("startCursor", JSON.stringify(nextCursor), "EX", REDIS_TTL_SECONDS)
+        await redis.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", 60)
+        await redis.set("startCursor", JSON.stringify(nextCursor), "EX", 60)
 
     }
     return res
@@ -101,7 +98,7 @@ const startQuestion= asyncHandler(async (req,res) => {
     if(!question){
         throw new ApiError(404, "Question not found")
     }
-    await redis.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", REDIS_TTL_SECONDS)
+    await redis.set(`${user._id}:Question:${ques_id}`, JSON.stringify(question), "EX", 60)
     
     return res
     .status(200)

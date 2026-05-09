@@ -9,7 +9,7 @@ import * as Y from "yjs"
 
 // we have socket.rooms and socket._id by default for every .on trigger.
 const api= axios.create({
-    baseURL: "http://localhost:8003"
+    baseURL: process.env.BASE_URL
 })
 
 const rooms={},userToSocket={},socketToUser={}
@@ -43,7 +43,7 @@ const initializeIO= ()=>{
         userToSocket[userId]=socket.id
         console.log("user",userId);
         
-        await api.patch(`/feature/v1/user/online-status/${userId}?online=true`)
+        await api.patch(`/api/v1/user/online-status/${userId}?online=true`)
         const storedMessage= await redis.lrange(`stored-chat-message:${userId}`,0,-1)
             if(storedMessage.length>0){
                 const parse=[]
@@ -170,7 +170,8 @@ const initializeIO= ()=>{
             if(!rooms[roomId]){
                 return new ApiError(404,"roomId not found")
             }
-            redis.rpush(`in-meeting-message:${roomId}`,{user, message},"EX",36000)
+            redis.rpush(`in-meeting-message:${roomId}`,{user, message},)
+            redis.expire(`in-meeting-message:${roomId}`,36000)
             socket.to(`${roomId}`).emit("in-meeting-message-receive",{message, user})
         })
 
@@ -231,7 +232,7 @@ const initializeIO= ()=>{
             console.log("going offline")
             //console.log("userId",userId)
             
-            await api.patch(`/feature/v1/user/online-status/${userId.id || userId}?online=false`)
+            await api.patch(`/api/v1/user/online-status/${userId.id || userId}?online=false`)
             // for (const roomId of socket.rooms) { //when a socket is created it adds itself in socket.rooms.and "disconnecting" can give us this socket.rooms
             //     console.log(roomId);
             // }
@@ -284,7 +285,8 @@ const initializeIO= ()=>{
                     }
                 }
                 if(toDisplayUser.length > 0){
-                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)),"EX",15)
+                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)))
+                    await redis.expire(`inchatprofiles:${roomId}`,15)
                 }
             }
             console.log("emiting the userlist");
@@ -293,13 +295,13 @@ const initializeIO= ()=>{
         })
         
 
-        socket.on("request-yjs-state", ({ roomId }) => {
+        socket.on("request-yjs-state", ({ roomId }) => { // this is just to handle the code sync of the newly joined user. only the yjs state is emited here
             const room = rooms[roomId]
             if (!room || !room.state) return
             socket.emit("yjs-init", room.state)
         })
 
-        socket.on("yjs-update",({update,roomId})=>{
+        socket.on("yjs-update",({update,roomId})=>{ // this is the live update handler
             const normalizedUpdate = normalizeYjsUpdate(update);
 
             if (!normalizedUpdate || normalizedUpdate.length === 0) {
@@ -309,7 +311,7 @@ const initializeIO= ()=>{
             const room = rooms[roomId];
             if (!room) return;
 
-            if (!room.ydoc) {
+            if (!room.ydoc) { //the overall logic is. there are total 3 Y.doc is 2 user in a room. two with the clients and one with the server to sync nwe to rejoined users.
                 room.ydoc = new Y.Doc();
 
                 if (room.state) {
