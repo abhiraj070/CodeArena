@@ -1,0 +1,129 @@
+services:
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: codearena-api-gateway 
+    # REMOVED: `command: npm run dev` the Dockerfile already has `CMD ["npm","run","dev"]`, so this line was duplicating it. Keeping it only in the Dockerfile = single source of truth.
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./backend/api-gateway/.env
+    environment:
+      # hard-override the URLs of sibling services. Inside the compose network
+      # the hostname is the service name, NOT localhost. If your .env has
+      # http://localhost:8002 it will fail from inside the container.
+      - CODE_RUNNER_SERVICE_URL=http://code-runner-service:8002
+      - FEATURE_SERVICE_URL=http://feature-service:8000
+    volumes:
+      # ADDED: bind-mount source so nodemon (npm run dev) reloads on host edits.
+      - ./backend/api-gateway:/app
+      # ADDED: anonymous volume so the host's (Windows-built / possibly missing)
+      #        node_modules does NOT shadow the ones installed inside the linux
+      #        container during `RUN npm install`.
+      - /app/node_modules
+    depends_on:
+      - feature-service
+      - code-runner-service
+    networks:
+      - codearena-net   # ADDED: explicit network (also works with default, but explicit = clearer)
+
+  code-runner-service:
+    build:
+      context: ./backend/code-runner-service
+      dockerfile: Dockerfile
+    container_name: codearena-code-runner  
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./backend/code-runner-service/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BASE_URL=http://feature-service:8000
+    volumes:
+      - ./backend/code-runner-service:/app   
+      - /app/node_modules                   
+    depends_on:
+      - redis
+      - feature-service
+    networks:
+      - codearena-net
+
+  feature-service:
+    build:
+      context: ./backend/feature-service
+      dockerfile: Dockerfile
+    container_name: codearena-feature   
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/feature-service/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URI=mongodb://mongo:27017/codearena
+      - ORIGIN=http://localhost:5173
+    volumes:
+      - ./backend/feature-service:/app  
+      - /app/node_modules               
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - codearena-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codearena-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_FEATURE_SERVICE_URL=http://localhost:8000
+      - VITE_API_GATEWAY_URL=http://localhost:8003
+    volumes:
+      - ./frontend:/app          
+      - /app/node_modules       
+    depends_on:
+      - api-gateway
+    networks:
+      - codearena-net
+
+  redis:
+    image: redis:7
+    container_name: codearena-redis   # ADDED
+    ports:
+      - "6379:6379"
+    volumes:
+      # ADDED: persist redis data (and pub/sub backlog while idle) across
+      #        `docker compose down` / image rebuilds. Without this you lose
+      #        every queued BullMQ job on container recreation.
+      - redis-data:/data
+    networks:
+      - codearena-net
+
+  mongo:
+    image: mongo:7
+    container_name: codearena-mongo   
+    ports:
+      - "27017:27017"
+    volumes:
+      # ADDED: persist mongo data dir. Without this every `compose down` wipes
+      #        users / questions / messages.
+      - mongo-data:/data/db
+    networks:
+      - codearena-net
+
+# ADDED: named volumes so data survives container recreation.
+volumes:
+  redis-data:
+  mongo-data:
+
+# ADDED: explicit user-defined bridge network. Compose would create one
+#        automatically, but naming it makes inspection (`docker network ls`)
+#        and cross-compose-file references easier.
+networks:
+  codearena-net:
+    driver: bridge

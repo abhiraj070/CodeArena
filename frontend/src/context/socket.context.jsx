@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
         }
 
         const newSocket = io(
-            import.meta.env.VITE_FEATURE_SERVICE_URL || "http://localhost:8000",
+            import.meta.env.VITE_FEATURE_SERVICE_URL,
             {
                 withCredentials: true,
                 autoConnect: true,

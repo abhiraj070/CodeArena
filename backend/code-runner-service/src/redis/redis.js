@@ -5,8 +5,8 @@ let client= null
 async function connectRedis(){
     if(!client){
         client= new Redis({
-            host: "127.0.0.1",
-            port: 6379
+            host: process.env.REDIS_HOST || "127.0.0.1",
+            port: process.env.REDIS_PORT 
         })
         client.on("connection",()=>{
             console.log("connected to redis server");

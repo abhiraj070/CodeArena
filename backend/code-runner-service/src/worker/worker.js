@@ -38,7 +38,7 @@ async function getResult(token){
 
 async function createSubmission(code, language_id, input){
     try {
-        const res= await axios.post("https://judge0-ce.p.rapidapi.com/submissions",
+        const res= await axios.post(process.env.JUDGE_SUBMISSION_URL,
             {
                 source_code: code,
                 language_id,
@@ -141,8 +141,11 @@ const worker= new Worker("code-execution",async (job)=>{
 },
 {
     connection: {
-      host: "127.0.0.1",
-      port: 6379,
+      // CHANGED: was hardcoded "127.0.0.1" which fails inside docker because
+      // redis lives in a sibling container reachable as host `redis`. Read
+      // from env (set by compose) and fall back to localhost for bare-metal dev.
+      host: process.env.REDIS_HOST || "127.0.0.1",
+      port: Number(process.env.REDIS_PORT) || 6379,
     },
 }
 )
