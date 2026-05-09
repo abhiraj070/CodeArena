@@ -35,24 +35,35 @@ function normalizeYjsUpdate(update) {
 }
 
 const initializeIO= ()=>{
-    io.on("connection",async(socket)=>{
+    io.on("connection",(socket)=>{
         //console.log("32");
         console.log("user connected to socket form Backend");
         const userId= socket.handshake.auth.userId
         socketToUser[socket.id]=userId
         userToSocket[userId]=socket.id
         console.log("user",userId);
-        
-        await api.patch(`/api/v1/user/online-status/${userId}?online=true`)
-        const storedMessage= await redis.lrange(`stored-chat-message:${userId}`,0,-1)
-            if(storedMessage.length>0){
-                const parse=[]
-                for (const msg of storedMessage) {
-                    parse.push(JSON.parse(msg)) 
+
+        // Register all event listeners synchronously BEFORE any await. Otherwise events emitted by
+        // the client immediately after handshake (e.g., request-yjs-state on page refresh) are
+        // dropped because the listeners aren't attached yet.
+
+        // Fire-and-forget the async housekeeping; listeners are already attached by the time this runs.
+        ;(async () => {
+            try {
+                await api.patch(`/api/v1/user/online-status/${userId}?online=true`)
+                const storedMessage = await redis.lrange(`stored-chat-message:${userId}`,0,-1)
+                if(storedMessage.length>0){
+                    const parse=[]
+                    for (const msg of storedMessage) {
+                        parse.push(JSON.parse(msg))
+                    }
+                    socket.emit("receive-inchat-message",parse,{senderId: parse.senderId})
+                    await redis.del(`stored-chat-message:${userId}`)
                 }
-                socket.emit("receive-inchat-message",parse,{senderId: parse.senderId})
-                await redis.del(`stored-chat-message:${userId}`)
+            } catch (err) {
+                console.error("connection housekeeping failed", err)
             }
+        })()
 
         socket.on("create-room",({roomId, username, id, questionId, code})=>{
             console.log("starting the room creation");
@@ -98,7 +109,13 @@ const initializeIO= ()=>{
 
             socket.join(roomId)
             socketToUser[socket.id] = { id, username, roomId }
-            rooms[roomId].users.push({Id: id, username: username})
+            // Idempotent: only add if this user id is not already present (a refresh re-joins).
+            if (!rooms[roomId].users.some((u) => u.Id === id)) {
+                rooms[roomId].users.push({Id: id, username: username})
+            }
+            if (rooms[roomId].vacantSince) {
+                delete rooms[roomId].vacantSince
+            }
             //console.log("user",rooms[roomId].users);
             
             for(const users of rooms[roomId].users){
@@ -203,8 +220,11 @@ const initializeIO= ()=>{
                     console.log(`User ${username} removed from room ${roomId}`)
                     
                     if (rooms[roomId].users.length === 0) {
-                        delete rooms[roomId]
-                        console.log(`Room ${roomId} deleted (no users left)`)
+                        // Do NOT delete on transient disconnect (e.g., page refresh) - the user may
+                        // reconnect within seconds. Mark the room as vacant; explicit "leave-room"
+                        // still cleans it up, and a future eviction policy can use vacantSince.
+                        rooms[roomId].vacantSince = Date.now()
+                        console.log(`Room ${roomId} marked vacant (kept in memory for reconnect)`)
                     } else {
                         io.to(roomId).emit("user_left", username)
                     }

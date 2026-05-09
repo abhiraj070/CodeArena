@@ -70,7 +70,6 @@ export default function QuestionPage() {
   const ydocRef= useRef(null)
   const bindingRef= useRef(null)
   const copyTimeoutRef= useRef(null)
-  const hydrationRef = useRef(true)
   const location =useLocation()
   const consoleHeightRef = useRef(140)
   const sectionRef = useRef(null)
@@ -85,15 +84,19 @@ export default function QuestionPage() {
   const [peopleOpen, setPeopleOpen] = useState(false)
   const chatBottomRef = useRef(null)
 
-  const alreadyJoined = location.state?.alreadyJoined ?? false
+  console.log("id:",id,"roomid",roomId);
+  
+
   useEffect(()=>{
     setLanguage(user.language)
   },[])
 
 
-  // initial join room emit if not already joined
+  // Always emit join-room when in arena mode. The `alreadyJoined` location.state flag is set
+  // when navigating from create-arena/invite-accept, but it is preserved across hard refreshes,
+  // which means the new socket would never re-join the io-room and miss broadcasts. The server's
+  // join-room handler is idempotent, so re-joining is safe.
   useEffect(() => {
-    if(alreadyJoined) return
     if (!socket || !roomId || !user?._id) return
 
     const joinRoom = () => {
@@ -131,6 +134,10 @@ export default function QuestionPage() {
           const res = await axios.get(`/feature/v1/question/getAQuestion/${id}`)
           setQuestion(res.data.data)
           setCode(STARTER_CODE[language])
+          ydoc.transact(() => {
+          if (yText.length > 0) yText.delete(0, yText.length)
+            yText.insert(0, STARTER_CODE[language])
+          })
           return
         }
 
@@ -149,13 +156,11 @@ export default function QuestionPage() {
           const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
-          hydrationRef.current = true
           setCode(STARTER_CODE[language])
           return
         }
 
         console.log("code sync and question featch start");
-        hydrationRef.current = true
         console.log("code synced");
         
       } catch (error) {
@@ -170,7 +175,7 @@ export default function QuestionPage() {
   const yText= useMemo(()=>ydocRef.current.yText,[]) 
 
   useEffect(() => {
-    if (!roomId) return
+    if (!roomId || !socket) return
     const handleUpdate = (update) => {
       const normalizedUpdate = normalizeYjsUpdate(update)
 
@@ -178,7 +183,6 @@ export default function QuestionPage() {
         console.warn("Ignoring invalid Yjs update payload", update)
         return
       }
-
       try {
         Y.applyUpdate(ydoc, normalizedUpdate, "remote")
       } catch (error) {
@@ -199,11 +203,22 @@ export default function QuestionPage() {
     socket.on("yjs-update-receive", handleUpdate)
     socket.on("yjs-init", handleInit)
 
-    socket.emit("request-yjs-state", { roomId })
+    const requestYjsState = () => {
+      socket.emit("request-yjs-state", { roomId })
+    }
+
+    // On a fresh page load (e.g., refresh), the socket may not be connected yet when this
+    // effect runs. Wait for the connect event so the emit is actually delivered. Also re-request
+    // on every subsequent reconnect to recover state if the connection ever drops.
+    if (socket.connected) {
+      requestYjsState()
+    }
+    socket.on("connect", requestYjsState)
 
     return () => {
       socket.off("yjs-update-receive", handleUpdate)
       socket.off("yjs-init", handleInit)
+      socket.off("connect", requestYjsState)
     }
   }, [roomId, socket, ydoc])
 
@@ -221,27 +236,6 @@ export default function QuestionPage() {
     }
   }, [roomId, socket, ydoc])
 
-  useEffect(() => {
-    if (code === undefined || code === null) return
-    if (code === "" && !hydrationRef.current) return
-    if (roomId) return // server is the single source of truth for yText in collaborative rooms
-
-    const isHydrating = hydrationRef.current
-
-    const applyCode = () => { //.transact helps many changes in the y.text to wrap in one and send. this helps in many things including network traffic
-      if (yText.length > 0) {
-        yText.delete(0, yText.length)
-      }
-      yText.insert(0, code)
-    }
-
-    if (isHydrating) {
-      ydoc.transact(applyCode, "hydrate")
-      hydrationRef.current = false
-    } else {
-      ydoc.transact(applyCode)
-    }
-  }, [code, ydoc, yText, roomId])
 
   const handleEditorDidMount= (editor)=>{
     bindingRef.current = new MonacoBinding(  //MonacoBinding is the main connector between yjs and monaco. it bidirectionally updated yText and monaco text model 
@@ -292,7 +286,7 @@ export default function QuestionPage() {
 
   // in-meeting chat
   useEffect(()=>{
-    if(!roomId) return
+    if(!roomId ||!socket) return
     const handler= ({message, user})=>{
       const entry = {
         id: crypto.randomUUID(),
@@ -310,7 +304,7 @@ export default function QuestionPage() {
   },[])
 
   useEffect(() => {
-    if(!roomId) return
+    if(!roomId ||!socket) return
 
     const handler= ({people})=>{
       console.log("got the user list");
@@ -366,6 +360,7 @@ export default function QuestionPage() {
 
   //code output handle
   useEffect(()=>{
+    if(!socket) return
     const handler= ({result})=>{
       console.log(result);
     }
@@ -397,18 +392,14 @@ export default function QuestionPage() {
 
 
 
-
-
   const onLanguageChange = (val) => {
     const newStarter = STARTER_CODE[val] ?? ""
     setLanguage(val)
     setCode(newStarter)
-    if (roomId) {
-      ydoc.transact(() => {
-        if (yText.length > 0) yText.delete(0, yText.length)
-        yText.insert(0, newStarter)
-      })
-    }
+    ydoc.transact(() => {
+      if (yText.length > 0) yText.delete(0, yText.length)
+      yText.insert(0, newStarter)
+    })
   };
 
   //COPY
