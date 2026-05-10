@@ -141,9 +141,6 @@ const worker= new Worker("code-execution",async (job)=>{
 },
 {
     connection: {
-      // CHANGED: was hardcoded "127.0.0.1" which fails inside docker because
-      // redis lives in a sibling container reachable as host `redis`. Read
-      // from env (set by compose) and fall back to localhost for bare-metal dev.
       host: process.env.REDIS_HOST || "127.0.0.1",
       port: Number(process.env.REDIS_PORT) || 6379,
     },

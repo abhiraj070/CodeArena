@@ -193,29 +193,30 @@ export default function AuthPage() {
                   Join the workspace where code, questions, and people stay connected.
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Use the same account for practice, collaboration, and session invites. Login needs your email and password. Signup also needs your full name, username, and a profile picture.
+                  CodeArena is where developers compete, collaborate, and build in real time.
+                  From live code execution to multiplayer battles, everything is designed to make coding feel exciting and competitive.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                {
-                  icon: ShieldCheck,
-                  title: "Secure access",
-                  text: "Connect through the feature-service auth endpoints.",
-                },
-                {
-                  icon: CheckCircle2,
-                  title: "Fast setup",
-                  text: "Create an account in one pass and sign in immediately.",
-                },
-                {
-                  icon: Code2,
-                  title: "Same stack",
-                  text: "Uses the existing React, Tailwind, and Radix primitives.",
-                },
-              ].map((item) => {
+                  {
+                    icon: ShieldCheck,
+                    title: "Secure collaboration",
+                    text: "Join coding rooms safely with authentication and protected sessions.",
+                  },
+                  {
+                    icon: CheckCircle2,
+                    title: "Instant coding battles",
+                    text: "Create or join multiplayer coding arenas, invite and start competing in seconds.",
+                  },
+                  {
+                    icon: Code2,
+                    title: "Real-time coding",
+                    text: "Experience live code execution, collaborative editing, and seamless syncing.",
+                  },
+                ].map((item) => {
                 const Icon = item.icon;
 
                 return (

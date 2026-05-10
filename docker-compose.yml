@@ -64,6 +64,7 @@ services:
       - REDIS_PORT=6379
       - MONGODB_URI=mongodb://mongo:27017/codearena
       - ORIGIN=http://localhost:5173
+      - STATE= development
     volumes:
       - ./backend/feature-service:/app  
       - /app/node_modules               
