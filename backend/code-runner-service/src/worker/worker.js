@@ -140,9 +140,12 @@ const worker= new Worker("code-execution",async (job)=>{
     await client.publish("code-result", JSON.stringify({result,roomId}))
 },
 {
-    connection: {
-      host: process.env.REDIS_HOST || "127.0.0.1",
-      port: Number(process.env.REDIS_PORT) || 6379,
-    },
+    connection:
+      process.env.STATE === "production" //this need a new redis connection
+    ? new Redis(process.env.REDIS_URL)
+    : new Redis({
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT
+      })
 }
 )
