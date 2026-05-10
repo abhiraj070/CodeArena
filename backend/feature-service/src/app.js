@@ -7,7 +7,7 @@ import helmet from 'helmet'
 
 const app= express()
 const server= http.createServer(app)
-const corsOrigin = process.env.ORIGIN || "http://localhost:5173"
+const corsOrigin = process.env.ORIGIN
 const io= new Server(server, {
     cors: {
         origin: corsOrigin,

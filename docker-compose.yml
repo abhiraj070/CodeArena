@@ -41,7 +41,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - BASE_URL=http://feature-service:8000
-      - STATE=production
+      - STATE=development
     volumes:
       - ./backend/code-runner-service:/app   
       - /app/node_modules                   
@@ -65,7 +65,7 @@ services:
       - REDIS_PORT=6379
       - MONGODB_URI=mongodb://mongo:27017/codearena
       - ORIGIN=http://localhost:5173
-      - STATE=production
+      - STATE=development
     volumes:
       - ./backend/feature-service:/app  
       - /app/node_modules               
