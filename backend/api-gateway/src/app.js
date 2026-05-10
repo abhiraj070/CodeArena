@@ -1,11 +1,18 @@
 import express from 'express'
 import proxy from 'express-http-proxy'
 import helmet from 'helmet'
+import cors from 'cors'
 import { ApiResponse } from './utils/ApiResponse.js'
 import { ApiError } from './utils/ApiError.js'
 import { errorHandler } from './utils/errorHandler.js'
 const app= express()
 
+const corsOrigin = process.env.ORIGIN
+
+app.use(cors({
+    origin: corsOrigin,
+    credentials: true,
+}))
 app.use(helmet())
 
 const proxyOptions_code_running_service={
