@@ -8,11 +8,11 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/feature": {
-                target: import.meta.env.STATE==="production" ? "https://api-gateway-kls3.onrender.com" : "http://localhost:8003", 
+                target: import.meta.env.VITE_STATE==="production" ? "https://api-gateway-kls3.onrender.com" : "http://localhost:8003", 
                 changeOrigin: true,
             },
             "/codeRun": {
-                target: import.meta.env.STATE==="production" ? "https://api-gateway-kls3.onrender.com" : "http://localhost:8003",
+                target: import.meta.env.VITE_STATE==="production" ? "https://api-gateway-kls3.onrender.com" : "http://localhost:8003",
                 changeOrigin: true,
             }
 		},
