@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 8003
 
-CMD ["npm","run","dev"]
+CMD ["node", "-r", "dotenv/config", "src/index.js"]

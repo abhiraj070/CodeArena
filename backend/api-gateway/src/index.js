@@ -1,9 +1,21 @@
 import { app } from "./app.js";
 
-try {
-    app.listen(process.env.PORT,()=>{
-        console.log("Api-gate-server is running on port",process.env.PORT);
-    })
-} catch (error) {
-    console.error("Error in creating the api-gateway server", error);
-}
+const PORT = process.env.PORT || 8003;
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log("Api-gate-server is running on port", PORT);
+});
+
+const shutdown = (signal) => {
+    console.log(`${signal} received, shutting down gracefully`);
+    server.close(() => {
+        console.log("HTTP server closed");
+        process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("unhandledRejection", (err) => console.error("unhandledRejection:", err));
+process.on("uncaughtException", (err) => console.error("uncaughtException:", err));

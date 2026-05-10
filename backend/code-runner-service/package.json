@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node -r dotenv/config src/index.js\" \"node -r dotenv/config src/worker/worker.js\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"node -r dotenv/config src/index.js\" \"node -r dotenv/config src/worker/worker.js\""
   },
   "keywords": [],
   "author": "",

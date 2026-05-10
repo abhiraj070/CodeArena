@@ -12,5 +12,5 @@ COPY . .
 EXPOSE 8000
 # note this does not actually creates a exposes the pots. this is just to tell that this container will be listening on these ports
 
-CMD ["npm", "run", "dev"]
-# startup command
+CMD ["node", "-r", "dotenv/config", "src/index.js"]
+# startup command - run node directly so SIGTERM reaches it cleanly (no npm wrapper)

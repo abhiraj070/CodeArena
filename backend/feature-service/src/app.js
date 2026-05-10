@@ -26,6 +26,8 @@ app.use(express.urlencoded())
 app.use(express.json({limit:"10mb"}))
 app.use("/temp", express.static("public/temp"))
 
+app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }))
+
 import userRouter from "./routes/user.route.js"
 import quesRouter from "./routes/question.route.js"
 import messageRouter from "./routes/message.route.js"

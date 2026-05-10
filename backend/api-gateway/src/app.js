@@ -15,6 +15,8 @@ app.use(cors({
 }))
 app.use(helmet())
 
+app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }))
+
 const proxyOptions_code_running_service={
     proxyReqPathResolver: (req)=>{
         return req.originalUrl.replace(/^\/codeRun/,"/api")
