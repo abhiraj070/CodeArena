@@ -74,7 +74,7 @@ const login= asyncHandler(async (req, res) => {
         throw new ApiError(500,"Error while generating tokens")
     }
 
-    const isProd = process.env.NODE_ENV === "production"
+    const isProd = process.env.STATE === "production"
     const cookieOptions = {
         httpOnly: true,
         secure: isProd,
