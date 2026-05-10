@@ -4,11 +4,16 @@ import Redis from 'ioredis'
 let client= null
 async function connectRedis(){
     if(!client){
-        client= new Redis(
-            process.env.STATE==="production" 
-            ? process.env.REDIS_URL
-            : { host: process.env.REDIS_HOST, port: process.env.REDIS_PORT}
-        )
+        const client =
+        process.env.STATE === "production"
+            ? new Redis(process.env.REDIS_URL, {
+                maxRetriesPerRequest: null
+            })
+            : new Redis({
+                host: process.env.REDIS_HOST,
+                port: process.env.REDIS_PORT,
+                maxRetriesPerRequest: null
+            });
         client.on("connection",()=>{
             console.log("connected to redis server");
         })
