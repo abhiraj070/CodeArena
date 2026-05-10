@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input.jsx";
 import { Card } from "@/components/ui/card.jsx";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { Circle, Search } from "lucide-react";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 import { useSocket } from "@/context/socket.context";
 import { useUser } from "@/context/user.context";
 import { STARTER_CODE } from "@/lib/code-template";
@@ -45,7 +45,7 @@ export function QuestionContainer({questionAdded}) {
         try {
           console.log("getting newly created question");
 
-          const res= await axios.get(`/feature/v1/question/newlyCreatedQuestion`)
+          const res= await api.get(`/feature/v1/question/newlyCreatedQuestion`)
           const latestQuestion = res?.data?.data?.question ?? res?.data?.data ?? null
           if (!latestQuestion) return
           console.log("got the new question");
@@ -79,7 +79,7 @@ export function QuestionContainer({questionAdded}) {
         const url= cursor
           ? `/feature/v1/question/getQuestions?cursor=${cursor}&limit=12`
           : `/feature/v1/question/getQuestions?limit=12`
-        const res= await axios.get(url)
+        const res= await api.get(url)
         const incomingQuestions = res?.data?.data?.questions ?? []
         const nextCursor = res?.data?.data?.nextCursor ?? null
 

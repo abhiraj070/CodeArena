@@ -25,7 +25,7 @@ import { DifficultyBadge } from "@/components/DifficultyBadge.jsx";
 import { ArenaInvitePanel } from "@/components/ArenaInvitePanel.jsx";
 import { STARTER_CODE, LANGUAGES } from "@/lib/code-template.js";
 import { ArrowLeft, Check, Code2, Copy, MessageSquare, Play, Send, UserPlus, X } from "lucide-react";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 import { useUser } from "@/context/user.context.jsx"; 
 import { MonacoBinding } from "y-monaco"; //binds yjs and monaco
 import * as Y from "yjs";
@@ -131,7 +131,7 @@ export default function QuestionPage() {
     const fetchQuestion=async ()=>{
       try {
         if (!roomId && id) {
-          const res = await axios.get(`/feature/v1/question/getAQuestion/${id}`)
+          const res = await api.get(`/feature/v1/question/getAQuestion/${id}`)
           setQuestion(res.data.data)
           setCode(STARTER_CODE[language])
           ydoc.transact(() => {
@@ -142,7 +142,7 @@ export default function QuestionPage() {
         }
 
         if(!question && roomId){
-          const res= await axios.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
+          const res= await api.get(`/feature/v1/question/startQuesByRoomAndId/${roomId}`)
           //console.log("got question from roomid");
           //console.log("ques:",res.data.data.question);
           setQuestion( res.data.data.question)
@@ -153,7 +153,7 @@ export default function QuestionPage() {
         if (id && roomId) {
           //console.log("19 — treating id as valid", id);
           console.log("roomid:",roomId,"id:",id);
-          const res= await axios.get(`/feature/v1/question/startQues/${id}/${roomId}`)
+          const res= await api.get(`/feature/v1/question/startQues/${id}/${roomId}`)
           setQuestion( res.data.data.question)
           console.log("ques:",res.data.data.question);
           setCode(STARTER_CODE[language])
@@ -456,7 +456,7 @@ export default function QuestionPage() {
     try {
       console.log("sending code for test");
       
-      await axios.post(`/codeRun/v1/codeRunner/run/${id}?type=Run`, {
+      await api.post(`/codeRun/v1/codeRunner/run/${id}?type=Run`, {
         language,
         code: yText.toString(),
         roomId
@@ -475,7 +475,7 @@ export default function QuestionPage() {
     if (!user || !receiver || !message) return
     const text = code ? `${message} Session code: ${code}` : message
     try {
-      await axios.post("/feature/v1/message/sendMessage", {
+      await api.post("/feature/v1/message/sendMessage", {
         message: text,
         personA: user._id,
         personB: receiver._id,

@@ -10,7 +10,7 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context";
 import { useSocket } from "@/context/socket.context";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 
 export default function PeoplePage() {
   const [search, setSearch] = useState("");
@@ -34,7 +34,7 @@ export default function PeoplePage() {
     }
 
     try {
-      const res= await axios.get(`/feature/v1/user/${query}`)
+      const res= await api.get(`/feature/v1/user/${query}`)
       setSearchedUser(res.data.data.user)
       setActiveId(res.data.data.user._id)
       setErrorMessage(null)
@@ -54,7 +54,7 @@ export default function PeoplePage() {
     const text = code ? `${message} Session code: ${code}` : message;
     //console.log("user:", user._id, "receiver:", inviteUser._id);
 
-    await axios.post("/feature/v1/message/sendMessage", {
+    await api.post("/feature/v1/message/sendMessage", {
       message: text,
       personA: user._id,
       personB: inviteUser._id,

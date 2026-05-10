@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
 import { Textarea } from "@/components/ui/textarea.jsx";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 
 const EMPTY_FORM = {
   title: "",
@@ -50,7 +50,7 @@ export function AddQuestionDialog({ open, onClose, onSubmit }) {
 
     try {
       setErrorMessage("");
-      await axios.post("/feature/v1/question/storeQuestion", payload);
+      await api.post("/feature/v1/question/storeQuestion", payload);
       onSubmit?.(payload);// this is a onSubmit callback passed from parent component which will execute the onsubmit function written in the parent component and pass the payload to it.
     } catch (error) {
       const message =

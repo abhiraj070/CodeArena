@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 import { Navbar } from "@/components/Navbar.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -68,7 +68,7 @@ export default function ProfilePage() {
         language: selectedLanguage,
       };
 
-      const response = await axios.patch("/feature/v1/user/profile", payload);
+      const response = await api.patch("/feature/v1/user/profile", payload);
       const updatedUser = response?.data?.data?.user;
 
       if (updatedUser) {

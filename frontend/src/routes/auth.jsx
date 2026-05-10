@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 import {AtSign, ArrowRight, CheckCircle2, Code2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, Upload, User} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -74,7 +74,7 @@ export default function AuthPage() {
       payload.append("password", signupForm.password);
       payload.append("profilePicture", signupForm.profilePicture);
 
-      const response = await axios.post("/feature/v1/user/register", payload);
+      const response = await api.post("/feature/v1/user/register", payload);
       const signeduser = response?.data?.data?.user ?? null;
       if (signeduser) {
         localStorage.setItem("user", JSON.stringify(signeduser));
@@ -140,7 +140,7 @@ export default function AuthPage() {
     
 
     try {
-      const response = await axios.post("/feature/v1/user/login", {
+      const response = await api.post("/feature/v1/user/login", {
         email: loginForm.email.trim(),
         password: loginForm.password,
       });

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils.js";
 import { useUser } from "@/context/user.context";
 import { useSocket } from "@/context/socket.context";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 
 export function ChatSidebar({
   activeId,
@@ -30,7 +30,7 @@ export function ChatSidebar({
     const fetchMessages = async () => {
       //console.log("userid:",user._id,"activeId:",activeId);
 
-      const res = await axios.get(`feature/v1/message/getMessages/${user._id}/${activeId}`);
+      const res = await api.get(`/feature/v1/message/getMessages/${user._id}/${activeId}`);
       setChat(res.data.data.messages || []);
       console.log("req:", res.data.data.messages);
       setActive(res.data.data.personB);
@@ -45,7 +45,7 @@ export function ChatSidebar({
   useEffect(() => {
     if (!user?._id) return;
     const fectchPeople = async () => {
-      const res = await axios.get(`feature/v1/user/chatsWith/${user._id}`);
+      const res = await api.get(`/feature/v1/user/chatsWith/${user._id}`);
       console.log("people", res.data.data);
 
       setChattingWith(res.data.data.chatsWith);
@@ -65,7 +65,7 @@ export function ChatSidebar({
       const id = crypto.randomUUID();
       let sender;
       (async () => {
-        const res = await axios.get(`/feature/v1/user/details/${senderId}`);
+        const res = await api.get(`/feature/v1/user/details/${senderId}`);
         sender = res.data.data.user;
         const receivedMessage = [{ message, sentBy: sender, _id: id }];
         console.log("recived:", receivedMessage);
@@ -82,7 +82,7 @@ export function ChatSidebar({
   const handleSend = async (message) => {
     if (!socket) return;
     socket.emit("in-chat-message", { message, senderId: user._id, receiver_id: activeId });
-    await axios.post(`/feature/v1/message/sendMessage`, {
+    await api.post(`/feature/v1/message/sendMessage`, {
       message,
       personA: user._id,
       personB: activeId,

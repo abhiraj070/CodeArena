@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "@/lib/api.js";
 import { Search, Send, X, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Button } from "@/components/ui/button.jsx";
@@ -43,7 +43,7 @@ export function ArenaInvitePanel({ open, onClose, roomId, onSendInvite }) {
     setSearching(true);
     setErrorMessage(null);
     try {
-      const res = await axios.get(`/feature/v1/user/${query}`);
+      const res = await api.get(`/feature/v1/user/${query}`);
       setFoundUser(res.data.data.user);
     } catch (error) {
       const errMsg =
