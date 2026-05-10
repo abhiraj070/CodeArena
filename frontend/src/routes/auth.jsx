@@ -74,12 +74,8 @@ export default function AuthPage() {
       payload.append("password", signupForm.password);
       payload.append("profilePicture", signupForm.profilePicture);
 
-      const response = await api.post("/feature/v1/user/register", payload);
-      const signeduser = response?.data?.data?.user ?? null;
-      if (signeduser) {
-        localStorage.setItem("user", JSON.stringify(signeduser));
-        setUser(signeduser);
-      }
+      await api.post("/feature/v1/user/register", payload);
+
       setLoginForm({
         email: signupForm.email.trim(),
         password: "",
@@ -89,7 +85,7 @@ export default function AuthPage() {
       setMode("login");
       setFeedback({
         type: "success",
-        text: "Account created successfully. You can sign in now.",
+        text: "Account created successfully. Please sign in to continue.",
       });
     } catch (error) {
       setFeedback({
