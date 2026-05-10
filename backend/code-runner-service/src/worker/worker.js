@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import axios from 'axios'
 import {client} from '../redis/redis.js'
 import { ApiError } from "../utils/ApiError.js";
+import Redis from "ioredis";
 
 
 const LANGUAGE_MAP = {
