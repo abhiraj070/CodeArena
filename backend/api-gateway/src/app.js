@@ -18,6 +18,7 @@ app.use(helmet())
 app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }))
 
 const proxyOptions_code_running_service={
+    limit: '25mb',
     proxyReqPathResolver: (req)=>{
         return req.originalUrl.replace(/^\/codeRun/,"/api")
     },
@@ -29,6 +30,7 @@ const proxyOptions_code_running_service={
     }
 }
 const proxyOptions_feature_service={
+    limit: '25mb',
     proxyReqPathResolver: (req)=>{
         return req.originalUrl.replace(/^\/feature/,"/api")
     },

@@ -22,7 +22,7 @@ app.use(cors({
 }))
 app.use(helmet()) //helmet protects our app from some well known web vulnerabilities by setting appropriate HTTP headers.
 app.use(cookieParser())
-app.use(express.urlencoded())
+app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use(express.json({limit:"10mb"}))
 app.use("/temp", express.static("public/temp"))
 
