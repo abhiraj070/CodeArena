@@ -287,31 +287,12 @@ const initializeIO= ()=>{
             console.log("received users request");
             
             const people = rooms[roomId]?.users || []
-            const toDisplayUser = []
-            const cachedProfiles = await redis.lrange(`inchatprofiles:${roomId}`,0,-1) || []
-            const parsedCachedProfiles = cachedProfiles
-                .map((item) => {
-                    return JSON.parse(item)
-                })
+            const toDisplayUser = (await Promise.all(
+                people.map(({ Id }) => fetchUserById(Id))
+            )).filter(Boolean)
 
-            console.log("chachedProfile:",parsedCachedProfiles);
-            
-            if(parsedCachedProfiles.length === 0){
-                for(const user of people){
-                    const userId = user.Id
-                    const u = await fetchUserById(userId)
-                    if(u){
-                        toDisplayUser.push(u)
-                    }
-                }
-                if(toDisplayUser.length > 0){
-                    await redis.rpush(`inchatprofiles:${roomId}`,...toDisplayUser.map((user) => JSON.stringify(user)))
-                    await redis.expire(`inchatprofiles:${roomId}`,15)
-                }
-            }
             console.log("emiting the userlist");
-            //console.log("people:",toDisplayUser, parsedCachedProfiles);
-            socket.emit("get-chat-people-receive",{people: toDisplayUser.length===0? parsedCachedProfiles : toDisplayUser})
+            socket.emit("get-chat-people-receive",{people: toDisplayUser})
         })
         
 

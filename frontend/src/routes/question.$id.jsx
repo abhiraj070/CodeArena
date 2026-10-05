@@ -316,7 +316,7 @@ export default function QuestionPage() {
     return ()=>{
       socket.off(`get-chat-people-receive`,handler)
     }
-  }, [])
+  }, [socket, roomId])
 
   useEffect(() => {
     if (!socket || !roomId) return
@@ -645,7 +645,7 @@ export default function QuestionPage() {
 
                       return (
                         <div
-                          key={profile.username}
+                          key={profile._id || profile.username}
                           className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/50 px-3 py-2"
                         >
                           <Avatar className="h-9 w-9 ring-2 ring-background">
