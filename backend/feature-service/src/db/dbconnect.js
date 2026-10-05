@@ -2,7 +2,12 @@ import mongoose from "mongoose";
 
 const dbconnect= async ()=>{
     try {
-        mongoose.connect(`${process.env.MONGODB_URI}`)
+        const mongoUri = process.env.MONGODB_URI
+        if(!mongoUri){
+            throw new Error("MONGODB_URI is not configured")
+        }
+
+        await mongoose.connect(mongoUri)
         console.log("db connected successfully");
         
     } catch (error) {
