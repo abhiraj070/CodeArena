@@ -59,10 +59,6 @@ export default function AuthPage() {
 
   const handleSignupSubmit = async (event) => {
     event.preventDefault();
-    if (!signupForm.profilePicture) {
-      setFeedback({ type: "error", text: "Profile picture is required." });
-      return;
-    }
     setLoading(true);
     setFeedback({ type: "", text: "" });
 
@@ -72,7 +68,9 @@ export default function AuthPage() {
       payload.append("username", signupForm.username.trim());
       payload.append("email", signupForm.email.trim());
       payload.append("password", signupForm.password);
-      payload.append("profilePicture", signupForm.profilePicture);
+      if (signupForm.profilePicture) {
+        payload.append("profilePicture", signupForm.profilePicture);
+      }
 
       await api.post("/feature/v1/user/register", payload);
 
@@ -399,7 +397,7 @@ export default function AuthPage() {
                       <div>
                         <p className="text-sm font-medium">Upload an image</p>
                         <p className="text-xs text-muted-foreground">
-                          Required by the register controller.
+                          Optional profile picture.
                         </p>
                       </div>
                     </div>

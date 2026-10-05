@@ -23,26 +23,25 @@ const register= asyncHandler(async (req,res) => {
     if(req.file){
         profilePicturePath= req.file.path
     }
-    else{
-        throw new ApiError(400, "Profile picture is required")
+
+    let profilePictureUrl
+    if(profilePicturePath){
+        const cloudinaryResponse = await uploadOnCloudinary(profilePicturePath)
+        console.log("response:",cloudinaryResponse);
+
+        profilePictureUrl = cloudinaryResponse?.secure_url || cloudinaryResponse?.url
+        if(!profilePictureUrl){
+            throw new ApiError(500, "Profile picture upload failed")
+        }
+        console.log("pp:",profilePictureUrl);
     }
 
-    const cloudinaryResponse = await uploadOnCloudinary(profilePicturePath)
-    console.log("response:",cloudinaryResponse);
-    
-    const profilePictureUrl = cloudinaryResponse?.secure_url || cloudinaryResponse?.url
-    if(!profilePictureUrl){
-        throw new ApiError(500, "Profile picture upload failed")
-    }
-    console.log("pp:",profilePictureUrl);
-    
-    
     const user= await User.create({
         fullName,
         username,
         email,
         password,
-        profilePicture: profilePictureUrl
+        ...(profilePictureUrl && { profilePicture: profilePictureUrl })
     })
     if(!user){
         throw new ApiError(500, "Error while creating user")
