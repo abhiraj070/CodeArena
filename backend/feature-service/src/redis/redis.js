@@ -6,8 +6,17 @@ async function connectRedis(){
     if(!redis){
         redis=new Redis(
             process.env.STATE==="production" 
-            ? process.env.REDIS_URL
-            : { host: process.env.REDIS_HOST, port: process.env.REDIS_PORT}
+            ? {
+                url: process.env.REDIS_URL,
+                enableOfflineQueue: false,
+                maxRetriesPerRequest: 1,
+            }
+            : {
+                host: process.env.REDIS_HOST,
+                port: process.env.REDIS_PORT,
+                enableOfflineQueue: false,
+                maxRetriesPerRequest: 1,
+            }
         )
 
         redis.on("connect",()=>{

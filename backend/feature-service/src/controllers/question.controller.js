@@ -16,17 +16,17 @@ const getAllQuestion= asyncHandler(async (req,res) => {
         throw new ApiError(400, "limit must be greater than 0")
     }
     if(cursor==null){
-        const cachedValue= await redis.get("startingQuestions")
-        const startCursor= await redis.get("startCursor")
-        //console.log(13);
-        //console.log("cachedCursor",startCursor);
-        
-        console.log("returning cached questions");
-        
-        if(cachedValue){
-            return res
-            .status(200)
-            .json(new ApiResponse(200,{questions: JSON.parse(cachedValue), nextCursor: JSON.parse(startCursor)},"successfully fetched limit number of questions from redis"))
+        try {
+            const cachedValue= await redis?.get("startingQuestions")
+            const startCursor= await redis?.get("startCursor")
+
+            if(cachedValue){
+                return res
+                .status(200)
+                .json(new ApiResponse(200,{questions: JSON.parse(cachedValue), nextCursor: JSON.parse(startCursor)},"successfully fetched limit number of questions from redis"))
+            }
+        } catch (error) {
+            console.error("question cache unavailable:", error.message)
         }
     }
     //console.log(14);
@@ -51,8 +51,12 @@ const getAllQuestion= asyncHandler(async (req,res) => {
 
     
     if(!cursor){
-        await redis.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", 60)
-        await redis.set("startCursor", JSON.stringify(nextCursor), "EX", 60)
+        try {
+            await redis?.set("startingQuestions", JSON.stringify(questionToDisplay), "EX", 60)
+            await redis?.set("startCursor", JSON.stringify(nextCursor), "EX", 60)
+        } catch (error) {
+            console.error("question cache unavailable:", error.message)
+        }
 
     }
     return res
